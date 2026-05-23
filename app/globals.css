@@ -1,26 +1,206 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens ─────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:          #07090d;
+  --bg-2:        #0d1117;
+  --surface:     rgba(255,255,255,0.04);
+  --surface-2:   rgba(255,255,255,0.07);
+  --border:      rgba(255,255,255,0.07);
+  --border-2:    rgba(255,255,255,0.12);
+  --green:       #22c55e;
+  --green-dim:   rgba(34,197,94,0.12);
+  --green-glow:  rgba(34,197,94,0.25);
+  --muted:       #6b7280;
+  --text:        #f8fafc;
+  --text-2:      #cbd5e1;
+  --radius-card: 20px;
+  --radius-btn:  14px;
+  --section-py:  clamp(5rem, 10vw, 8rem);
+  --container:   1280px;
+  --container-px: clamp(1rem, 5vw, 2.5rem);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ─── Reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  line-height: 1.6;
 }
+
+/* ─── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb { background: var(--green-glow); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+/* ─── Layout System ──────────────────────────────────── */
+.section {
+  position: relative;
+  padding-top: var(--section-py);
+  padding-bottom: var(--section-py);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
+}
+
+/* ─── Glass Surfaces ─────────────────────────────────── */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.glass-md {
+  background: var(--surface-2);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-2);
+}
+
+.glass-dark {
+  background: rgba(7,9,13,0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+}
+
+/* ─── Neon Button ────────────────────────────────────── */
+.btn-neon {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.4),
+              0 4px 20px rgba(34,197,94,0.25),
+              inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
+}
+.btn-neon:hover {
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.6),
+              0 4px 32px rgba(34,197,94,0.4),
+              inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+}
+.btn-neon:active { transform: translateY(0); }
+
+/* ─── Glow Effects ───────────────────────────────────── */
+.glow-green {
+  box-shadow: 0 0 30px var(--green-glow), 0 0 60px rgba(34,197,94,0.08);
+}
+.glow-green-sm {
+  box-shadow: 0 0 16px var(--green-glow);
+}
+
+/* ─── Gradient Text ──────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 40%, #86efac 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Background Glow Orbs ───────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+/* ─── Animated Gradient Border ───────────────────────── */
+.border-glow-green {
+  position: relative;
+}
+.border-glow-green::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(34,197,94,0.5) 0%, transparent 50%, rgba(99,102,241,0.3) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Ticker Animation ───────────────────────────────── */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-tape { animation: ticker 35s linear infinite; }
+
+/* ─── Float Animation ────────────────────────────────── */
+@keyframes float-a {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-18px) rotate(6deg); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(-4deg); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-22px) rotate(8deg); }
+}
+.float-a { animation: float-a 5s ease-in-out infinite; }
+.float-b { animation: float-b 7s ease-in-out infinite; }
+.float-c { animation: float-c 6s ease-in-out infinite; }
+
+/* ─── Pulse ──────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  70%  { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+.pulse-ring { animation: pulse-ring 2.5s ease-out infinite; }
+
+/* ─── Shimmer ────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #22c55e 0%, #86efac 30%, #22c55e 60%, #4ade80 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ─── Grid Dot Pattern ───────────────────────────────── */
+.grid-dots {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ─── Wallet Mobile App ──────────────────────────────── */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+
+/* ─── Admin Sidebar ──────────────────────────────────── */
+.sidebar-item { transition: all 0.18s ease; }
+.sidebar-item:hover { background: rgba(34,197,94,0.08); }
+.sidebar-item.active { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); }
+
+/* ─── Recharts Tooltip ───────────────────────────────── */
+.recharts-tooltip-wrapper { outline: none !important; }
+
+/* ─── Hide native scrollbar on overflow-x containers ─── */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
