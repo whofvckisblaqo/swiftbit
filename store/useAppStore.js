@@ -10,7 +10,14 @@ const authSlice = (set, get) => ({
   token: null,
   isAuthenticated: false,
 
-  setAuth: (user, token) => set({ isAuthenticated: true, user, token }),
+  setAuth: (user, token) => set({
+    isAuthenticated: true, user, token,
+    assets: cryptoAssets.map(a => ({ ...a, balance: 0, usdValue: 0 })),
+    transactions: [],
+    totalBalance: 0,
+    change24h: 0,
+    changePct24h: 0,
+  }),
 
   logout: () => set({ isAuthenticated: false, user: null, token: null }),
 

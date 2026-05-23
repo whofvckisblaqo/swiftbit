@@ -9,7 +9,7 @@ export default function AdminLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <AuthGuard redirectTo="/login">
+    <AuthGuard redirectTo="/login" requireAdmin={true}>
       <div className="flex min-h-screen bg-[#080b0f]">
         <Sidebar />
 

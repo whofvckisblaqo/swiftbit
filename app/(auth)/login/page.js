@@ -35,7 +35,7 @@ export default function LoginPage() {
       }
 
       setAuth(data.user, data.token);
-      router.push('/wallet');
+      router.push(data.user.role === 'admin' ? '/admin' : '/wallet');
     } catch {
       setError('Network error. Please check your connection.');
       setLoading(false);
