@@ -7,8 +7,7 @@ readFileSync('.env.local', 'utf8').split('\n').forEach(line => {
   if (k && v.length) process.env[k.trim()] = v.join('=').trim();
 });
 
-const uri = process.env.MONGODB_URI_ATLAS || 'mongodb+srv://swiftbit:kim77952468@cluster0.axvmyvt.mongodb.net/swiftbit?appName=Cluster0';
-await mongoose.connect(uri);
+await mongoose.connect(process.env.MONGODB_URI);
 
 const user = await mongoose.connection.collection('users').findOne({ email: 'admin@swiftbit.io' });
 if (!user) { console.log('NOT FOUND in Atlas'); process.exit(); }
