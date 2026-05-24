@@ -33,7 +33,19 @@ const authSlice = (set, get) => ({
 
   logout: () => set({ isAuthenticated: false, user: null, token: null }),
 
-  updateUser: (data) => set(s => ({ user: { ...s.user, ...data } })),
+  updateUser: (data) => set(s => {
+    const newUser = { ...s.user, ...data };
+    const updates = { user: newUser };
+    if (data.walletBalances) {
+      const updatedAssets = s.assets.map(a => {
+        const bal = parseFloat(data.walletBalances[a.symbol]) || 0;
+        return { ...a, balance: bal, usdValue: bal * a.price };
+      });
+      updates.assets = updatedAssets;
+      updates.totalBalance = updatedAssets.reduce((sum, a) => sum + a.usdValue, 0);
+    }
+    return updates;
+  }),
 });
 
 /* ─── Wallet slice ───────────────────────────────────── */

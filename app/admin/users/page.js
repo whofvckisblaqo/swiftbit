@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save } from 'lucide-react';
+import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
@@ -79,6 +79,90 @@ function WalletModal({ user, token, onClose, onSave }) {
   );
 }
 
+const COIN_LABELS = {
+  BTC: 'Bitcoin', ETH: 'Ethereum', USDT: 'Tether', BNB: 'BNB',
+  SOL: 'Solana', XRP: 'XRP', DOGE: 'Dogecoin', ADA: 'Cardano',
+};
+
+function FundModal({ user, token, onClose, onSave }) {
+  const [balances, setBalances] = useState(
+    Object.fromEntries(COINS.map(c => [c, user.walletBalances?.[c] ?? 0]))
+  );
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ walletBalances: balances }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast({ message: `Wallet funded for ${user.name}`, type: 'success' });
+      onSave(data.user);
+      onClose();
+    } catch (e) {
+      toast({ message: e.message || 'Save failed', type: 'error' });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative z-10 w-full max-w-lg glass-dark rounded-2xl border border-white/10 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-base font-bold text-white">Fund Wallet</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{user.name} · {user.email}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl glass border border-white/10 text-gray-500 hover:text-white transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-600 mb-5 leading-relaxed">
+          Set the coin balance for this user. Values are stored in the database and reflected immediately on their dashboard.
+        </p>
+
+        <div className="space-y-3">
+          {COINS.map(coin => (
+            <div key={coin} className="flex items-center gap-3">
+              <div className="w-24 flex-shrink-0">
+                <div className="text-xs font-bold text-white">{coin}</div>
+                <div className="text-[10px] text-gray-600">{COIN_LABELS[coin]}</div>
+              </div>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={balances[coin]}
+                onChange={e => setBalances(prev => ({ ...prev, [coin]: e.target.value }))}
+                placeholder="0"
+                className="flex-1 glass border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-gray-700 focus:outline-none focus:border-green-500/40 transition-all"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl glass border border-white/10 text-sm text-gray-400 hover:text-white transition-all">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-3 rounded-xl btn-neon text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+            {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving…</> : <><PiggyBank className="w-4 h-4" /> Fund Wallet</>}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const { token } = useAuth();
   const { toast } = useToast();
@@ -88,6 +172,7 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [menuOpen, setMenuOpen] = useState(null);
   const [walletUser, setWalletUser] = useState(null);
+  const [fundUser, setFundUser] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -198,11 +283,18 @@ export default function UsersPage() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.status)}`}>{u.status}</span>
                   </td>
                   <td className="px-5 py-4">
-                    <button onClick={e => { e.stopPropagation(); setWalletUser(u); }}
-                      className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium ${hasAddresses(u) ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20' : 'text-gray-500 glass border-white/10 hover:text-white hover:border-white/20'}`}>
-                      <Wallet className="w-3.5 h-3.5" />
-                      {hasAddresses(u) ? 'Assigned' : 'Assign'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={e => { e.stopPropagation(); setWalletUser(u); }}
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium ${hasAddresses(u) ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20' : 'text-gray-500 glass border-white/10 hover:text-white hover:border-white/20'}`}>
+                        <Wallet className="w-3.5 h-3.5" />
+                        {hasAddresses(u) ? 'Assigned' : 'Assign'}
+                      </button>
+                      <button onClick={e => { e.stopPropagation(); setFundUser(u); }}
+                        className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium text-yellow-400 bg-yellow-500/10 border-yellow-500/25 hover:bg-yellow-500/20">
+                        <PiggyBank className="w-3.5 h-3.5" />
+                        Fund
+                      </button>
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-500">{u.joinedDate}</td>
                   <td className="px-5 py-4 relative">
@@ -246,6 +338,14 @@ export default function UsersPage() {
             token={token}
             onClose={() => setWalletUser(null)}
             onSave={(updated) => setUsers(prev => prev.map(u => u.id === updated.id ? { ...u, walletAddresses: updated.walletAddresses } : u))}
+          />
+        )}
+        {fundUser && (
+          <FundModal
+            user={fundUser}
+            token={token}
+            onClose={() => setFundUser(null)}
+            onSave={(updated) => setUsers(prev => prev.map(u => u.id === updated.id ? { ...u, walletBalances: updated.walletBalances } : u))}
           />
         )}
       </AnimatePresence>

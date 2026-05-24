@@ -12,6 +12,17 @@ const WalletAddressSchema = new mongoose.Schema({
   ADA:  { type: String, default: '' },
 }, { _id: false });
 
+const WalletBalanceSchema = new mongoose.Schema({
+  BTC:  { type: Number, default: 0 },
+  ETH:  { type: Number, default: 0 },
+  USDT: { type: Number, default: 0 },
+  BNB:  { type: Number, default: 0 },
+  SOL:  { type: Number, default: 0 },
+  XRP:  { type: Number, default: 0 },
+  DOGE: { type: Number, default: 0 },
+  ADA:  { type: Number, default: 0 },
+}, { _id: false });
+
 const KycDataSchema = new mongoose.Schema({
   firstName:      { type: String, default: '' },
   lastName:       { type: String, default: '' },
@@ -35,6 +46,7 @@ const UserSchema = new mongoose.Schema(
     role:            { type: String, enum: ['user', 'admin'], default: 'user' },
     status:          { type: String, enum: ['active', 'suspended'], default: 'active' },
     walletAddresses: { type: WalletAddressSchema, default: () => ({}) },
+    walletBalances:  { type: WalletBalanceSchema,  default: () => ({}) },
   },
   { timestamps: true }
 );
@@ -66,6 +78,7 @@ UserSchema.methods.toSafeObject = function () {
     role:            this.role,
     status:          this.status,
     walletAddresses: this.walletAddresses?.toObject ? this.walletAddresses.toObject() : (this.walletAddresses || {}),
+    walletBalances:  this.walletBalances?.toObject  ? this.walletBalances.toObject()  : (this.walletBalances  || {}),
     joinedDate:      this.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
   };
 };

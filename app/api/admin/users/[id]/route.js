@@ -17,12 +17,22 @@ export async function PATCH(req, { params }) {
   if (body.kycStatus) update.kycStatus = body.kycStatus;
   if (body.kycLevel !== undefined) update.kycLevel = body.kycLevel;
 
+  const COINS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
+
   // Wallet addresses — merge individual coin keys
   if (body.walletAddresses && typeof body.walletAddresses === 'object') {
-    const coins = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
-    for (const coin of coins) {
+    for (const coin of COINS) {
       if (body.walletAddresses[coin] !== undefined) {
         update[`walletAddresses.${coin}`] = body.walletAddresses[coin];
+      }
+    }
+  }
+
+  // Wallet balances — merge individual coin amounts
+  if (body.walletBalances && typeof body.walletBalances === 'object') {
+    for (const coin of COINS) {
+      if (body.walletBalances[coin] !== undefined) {
+        update[`walletBalances.${coin}`] = parseFloat(body.walletBalances[coin]) || 0;
       }
     }
   }
