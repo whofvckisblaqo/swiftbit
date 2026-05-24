@@ -22,14 +22,20 @@ const authSlice = (set, get) => ({
   _hydrated: false,
   _setHydrated: () => set({ _hydrated: true }),
 
-  setAuth: (user, token) => set({
-    isAuthenticated: true, user, token,
-    assets: cryptoAssets.map(a => ({ ...a, balance: 0, usdValue: 0 })),
-    transactions: [],
-    totalBalance: 0,
-    change24h: 0,
-    changePct24h: 0,
-  }),
+  setAuth: (user, token) => {
+    const baseAssets = cryptoAssets.map(a => {
+      const bal = parseFloat(user?.walletBalances?.[a.symbol]) || 0;
+      return { ...a, balance: bal, usdValue: bal * a.price };
+    });
+    set({
+      isAuthenticated: true, user, token,
+      assets: baseAssets,
+      transactions: [],
+      totalBalance: baseAssets.reduce((sum, a) => sum + a.usdValue, 0),
+      change24h: 0,
+      changePct24h: 0,
+    });
+  },
 
   logout: () => set({ isAuthenticated: false, user: null, token: null }),
 

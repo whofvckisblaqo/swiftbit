@@ -465,7 +465,7 @@ export default function WalletDashboard() {
           </Link>
         </div>
         <div className="py-2">
-          {assets.slice(0, 5).map((coin, i) => (
+          {assets.map((coin, i) => (
             <CoinItem key={coin.id} coin={coin} index={i} />
           ))}
         </div>
