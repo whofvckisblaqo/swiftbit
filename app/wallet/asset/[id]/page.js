@@ -6,6 +6,7 @@ import {
   ArrowLeft, Send, Download, ArrowUpDown, Copy, Check,
   TrendingUp, TrendingDown, ChevronDown, X, AlertCircle,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useWallet, useAuth, useToast, useNotifs } from '@/store/useAppStore';
 
@@ -144,8 +145,13 @@ function ReceiveSheet({ coin, walletAddress, onClose }) {
 
       {walletAddress ? (
         <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="p-4 bg-white rounded-2xl">
+              <QRCodeSVG value={walletAddress} size={160} bgColor="#ffffff" fgColor="#000000" level="M" />
+            </div>
+          </div>
           <div className="glass rounded-2xl p-4 border border-white/5 text-center">
-            <p className="text-xs text-gray-500 mb-3">{coin.symbol} Deposit Address</p>
+            <p className="text-xs text-gray-500 mb-2">{coin.symbol} Deposit Address</p>
             <p className="text-xs font-mono text-gray-300 break-all leading-relaxed">{walletAddress}</p>
           </div>
           <div className="inline-flex items-center gap-1 text-xs text-yellow-400 bg-yellow-500/10 px-3 py-2 rounded-xl w-full justify-center">

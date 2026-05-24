@@ -2,18 +2,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Share2, Check, ChevronDown, AlertCircle } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { cryptoAssets } from '@/lib/data';
 import { useAuth } from '@/store/useAppStore';
 
 const COIN_SYMBOLS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
-
-const qrSize = 12;
-const qrPattern = Array.from({ length: qrSize * qrSize }, (_, i) => {
-  const row = Math.floor(i / qrSize);
-  const col = i % qrSize;
-  if ((row < 3 && col < 3) || (row < 3 && col >= qrSize - 3) || (row >= qrSize - 3 && col < 3)) return true;
-  return (row * 7 + col * 13 + row * col) % 3 === 0;
-});
 
 function ReceiveContent() {
   const { user } = useAuth();
@@ -82,11 +75,7 @@ function ReceiveContent() {
         {address ? (
           <>
             <div className="relative inline-block p-4 bg-white rounded-2xl mb-5">
-              <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${qrSize}, 1fr)`, width: 168 }}>
-                {qrPattern.map((filled, i) => (
-                  <div key={i} style={{ width: 12, height: 12, background: filled ? '#000' : '#fff', borderRadius: filled ? 2 : 0 }} />
-                ))}
-              </div>
+              <QRCodeSVG value={address} size={168} bgColor="#ffffff" fgColor="#000000" level="M" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg"
                   style={{ border: `2px solid ${selectedCoin.color}` }}>
