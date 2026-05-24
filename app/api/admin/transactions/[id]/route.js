@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import Transaction from '@/models/Transaction';
 import User from '@/models/User';
 import { requireAdmin } from '@/lib/adminAuth';
+import { sendTransactionStatusEmail } from '@/lib/mailer';
 
 export async function PATCH(req, { params }) {
   const admin = requireAdmin(req);
@@ -42,5 +43,14 @@ export async function PATCH(req, { params }) {
   }
 
   await tx.save();
+
+  // Email user on approval or rejection (fire-and-forget)
+  if (status && (status === 'completed' || status === 'failed')) {
+    const user = await User.findById(tx.userId).catch(() => null);
+    if (user) {
+      sendTransactionStatusEmail(user.email, user.name, tx.toJSON()).catch(console.error);
+    }
+  }
+
   return NextResponse.json({ transaction: tx.toJSON() });
 }
