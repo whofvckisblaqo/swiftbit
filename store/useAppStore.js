@@ -19,6 +19,8 @@ const authSlice = (set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
+  _hydrated: false,
+  _setHydrated: () => set({ _hydrated: true }),
 
   setAuth: (user, token) => set({
     isAuthenticated: true, user, token,
@@ -235,6 +237,9 @@ export const useAppStore = create(
         transactions: s.transactions,
         totalBalance: s.totalBalance,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?._setHydrated();
+      },
     }
   )
 );

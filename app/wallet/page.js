@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Bell, Eye, EyeOff, Send, Download, ArrowUpDown, ShoppingCart, CreditCard, Landmark, TrendingUp, TrendingDown, Copy, Check, ChevronDown } from 'lucide-react';
+import { Bell, Eye, EyeOff, Send, Download, ArrowUpDown, CreditCard, TrendingUp, TrendingDown, Copy, Check, ChevronDown } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { portfolioData } from '@/lib/data';
 import { useWallet, useAuth, useToast, useNotifs } from '@/store/useAppStore';
@@ -398,7 +398,7 @@ export default function WalletDashboard() {
   const { user } = useAuth();
   const { unreadCount } = useNotifs();
 
-  const [modal, setModal] = useState(null); // 'send' | 'receive' | 'buy' | 'swap'
+  const [modal, setModal] = useState(null); // 'send' | 'receive' | 'swap'
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -471,12 +471,10 @@ export default function WalletDashboard() {
       {/* Quick actions */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="glass rounded-2xl p-5 mb-5">
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <QuickAction icon={Send}        label="Send"    onClick={() => setModal('send')}    color="#22c55e" />
           <QuickAction icon={Download}    label="Receive" onClick={() => setModal('receive')} color="#6366f1" />
           <QuickAction icon={ArrowUpDown} label="Swap"    onClick={() => setModal('swap')}    color="#f59e0b" />
-          <QuickAction icon={ShoppingCart}label="Buy"     onClick={() => setModal('buy')}     color="#ec4899" />
-          <QuickAction icon={Landmark}    label="Loan"    onClick={() => {}} color="#14b8a6" />
           <QuickAction icon={CreditCard}  label="Card"    onClick={() => {}} color="#8b5cf6" />
         </div>
       </motion.div>
@@ -533,7 +531,6 @@ export default function WalletDashboard() {
       {/* Modals */}
       <SendModal    open={modal === 'send'}    onClose={() => setModal(null)} />
       <ReceiveModal open={modal === 'receive'} onClose={() => setModal(null)} />
-      <BuyModal     open={modal === 'buy'}     onClose={() => setModal(null)} />
       <SwapModal    open={modal === 'swap'}    onClose={() => setModal(null)} />
     </div>
   );
