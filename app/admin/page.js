@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users, DollarSign, ArrowDownToLine, ArrowUpFromLine, TrendingUp,
@@ -12,16 +13,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import StatsCard from '@/components/admin/StatsCard';
 import { adminTransactions, adminChartData, cryptoAssets } from '@/lib/data';
 import { getStatusColor, getTxColor } from '@/lib/utils';
-import { useAdminStore, useToast } from '@/store/useAppStore';
-
-const statCards = [
-  { title: 'Total Users', value: '248,392', change: 12.4, changeLabel: 'vs last month', icon: Users, color: '#22c55e' },
-  { title: 'Total Balance', value: '$2.84B', change: 8.2, changeLabel: 'platform AUM', icon: DollarSign, color: '#6366f1' },
-  { title: 'Daily Deposits', value: '$12.4M', change: 18.5, changeLabel: 'today', icon: ArrowDownToLine, color: '#f59e0b' },
-  { title: 'Daily Withdrawals', value: '$8.9M', change: -2.1, changeLabel: 'today', icon: ArrowUpFromLine, color: '#ec4899' },
-  { title: 'Revenue', value: '$184.2K', change: 24.8, changeLabel: 'this month', icon: TrendingUp, color: '#14b8a6' },
-  { title: 'Active Loans', value: '3,842', change: 5.3, changeLabel: '$42.1M outstanding', icon: Landmark, color: '#8b5cf6' },
-];
+import { useAdminStore, useToast, useAuth } from '@/store/useAppStore';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -41,6 +33,34 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function AdminDashboard() {
   const { kycQueue, approveKyc, rejectKyc } = useAdminStore();
   const { toast } = useToast();
+  const { token } = useAuth();
+  const [stats, setStats] = useState({ total: 0, active: 0, suspended: 0, kycPending: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/admin/stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch {}
+      finally { setStatsLoading(false); }
+    };
+    if (token) fetchStats();
+  }, [token]);
+
+  const statCards = [
+    { title: 'Total Users', value: statsLoading ? '—' : stats.total.toLocaleString(), icon: Users, color: '#22c55e' },
+    { title: 'Active Users', value: statsLoading ? '—' : stats.active.toLocaleString(), icon: ShieldCheck, color: '#6366f1' },
+    { title: 'Suspended', value: statsLoading ? '—' : stats.suspended.toLocaleString(), icon: ShieldCheck, color: '#ef4444' },
+    { title: 'KYC Pending', value: statsLoading ? '—' : stats.kycPending.toLocaleString(), icon: Clock, color: '#f59e0b' },
+    { title: 'Total Volume', value: '$12.4M', change: 8.2, icon: DollarSign, color: '#22c55e' },
+    { title: 'Active Sessions', value: '1,284', change: 3.1, icon: Activity, color: '#06b6d4' },
+  ];
 
   const handleApprove = (id, name) => {
     approveKyc(id);
