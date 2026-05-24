@@ -35,13 +35,13 @@ function QuickAction({ icon: Icon, label, onClick, color }) {
 }
 
 /* ── Coin row ── */
-function CoinItem({ coin, index, onSelect }) {
+function CoinItem({ coin, index }) {
   const positive = coin.change24h >= 0;
   return (
+    <Link href={`/wallet/market`}>
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.06 }}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-      onClick={() => onSelect?.(coin)}
       className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer">
       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
         style={{ background: `${coin.color}20`, color: coin.color, border: `1px solid ${coin.color}30` }}>
@@ -61,6 +61,7 @@ function CoinItem({ coin, index, onSelect }) {
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }
 
@@ -142,51 +143,6 @@ function SendModal({ open, onClose }) {
           </div>
         </form>
       )}
-    </Modal>
-  );
-}
-
-/* ── Receive modal ── */
-function ReceiveModal({ open, onClose }) {
-  const [copied, setCopied] = useState(false);
-  const address = '0x1a2B3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B';
-
-  const copy = () => {
-    navigator.clipboard.writeText(address).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Modal open={open} onClose={onClose} title="Receive Crypto">
-      <div className="text-center space-y-4">
-        <div className="w-44 h-44 mx-auto bg-white rounded-2xl flex items-center justify-center">
-          <svg viewBox="0 0 100 100" className="w-36 h-36">
-            {[...Array(10)].map((_, r) => [...Array(10)].map((_, c) => (
-              Math.random() > 0.5 ? <rect key={`${r}-${c}`} x={c * 10} y={r * 10} width={9} height={9} fill="#07090d" /> : null
-            )))}
-            <rect x={0} y={0} width={30} height={30} fill="#07090d" />
-            <rect x={5} y={5} width={20} height={20} fill="white" />
-            <rect x={10} y={10} width={10} height={10} fill="#07090d" />
-            <rect x={70} y={0} width={30} height={30} fill="#07090d" />
-            <rect x={75} y={5} width={20} height={20} fill="white" />
-            <rect x={80} y={10} width={10} height={10} fill="#07090d" />
-            <rect x={0} y={70} width={30} height={30} fill="#07090d" />
-            <rect x={5} y={75} width={20} height={20} fill="white" />
-            <rect x={10} y={80} width={10} height={10} fill="#07090d" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 mb-2">Your wallet address</p>
-          <div className="glass border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
-            <span className="text-xs text-gray-400 font-mono flex-1 truncate">{address}</span>
-            <button onClick={copy} className="text-gray-500 hover:text-green-400 transition-colors shrink-0">
-              {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-        <p className="text-xs text-gray-600">Only send ETH or ERC-20 tokens to this address</p>
-      </div>
     </Modal>
   );
 }
@@ -398,7 +354,7 @@ export default function WalletDashboard() {
   const { user } = useAuth();
   const { unreadCount } = useNotifs();
 
-  const [modal, setModal] = useState(null); // 'send' | 'receive' | 'swap'
+  const [modal, setModal] = useState(null); // 'send' | 'swap'
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -472,10 +428,19 @@ export default function WalletDashboard() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="glass rounded-2xl p-5 mb-5">
         <div className="grid grid-cols-4 gap-2">
-          <QuickAction icon={Send}        label="Send"    onClick={() => setModal('send')}    color="#22c55e" />
-          <QuickAction icon={Download}    label="Receive" onClick={() => setModal('receive')} color="#6366f1" />
-          <QuickAction icon={ArrowUpDown} label="Swap"    onClick={() => setModal('swap')}    color="#f59e0b" />
-          <QuickAction icon={CreditCard}  label="Card"    onClick={() => {}} color="#8b5cf6" />
+          <QuickAction icon={Send}        label="Send"    onClick={() => setModal('send')}  color="#22c55e" />
+          <Link href="/wallet/receive" className="flex flex-col items-center gap-2">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{ background: '#6366f115', border: '1px solid #6366f130' }}>
+                <Download className="w-6 h-6" style={{ color: '#6366f1' }} />
+              </div>
+              <span className="text-xs text-gray-500 font-medium">Receive</span>
+            </motion.div>
+          </Link>
+          <QuickAction icon={ArrowUpDown} label="Swap"    onClick={() => setModal('swap')}  color="#f59e0b" />
+          <QuickAction icon={CreditCard}  label="Card"    onClick={() => {}}                 color="#8b5cf6" />
         </div>
       </motion.div>
 
@@ -529,9 +494,8 @@ export default function WalletDashboard() {
       </motion.div>
 
       {/* Modals */}
-      <SendModal    open={modal === 'send'}    onClose={() => setModal(null)} />
-      <ReceiveModal open={modal === 'receive'} onClose={() => setModal(null)} />
-      <SwapModal    open={modal === 'swap'}    onClose={() => setModal(null)} />
+      <SendModal open={modal === 'send'} onClose={() => setModal(null)} />
+      <SwapModal open={modal === 'swap'} onClose={() => setModal(null)} />
     </div>
   );
 }
