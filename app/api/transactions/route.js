@@ -26,6 +26,9 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  // Swaps execute immediately; everything else requires admin approval
+  const isSwap = type === 'swap';
+
   await connectDB();
   const tx = await Transaction.create({
     userId:    user._id,
@@ -42,9 +45,15 @@ export async function POST(req) {
     fee:      fee      || 0,
     toSymbol: toSymbol || '',
     toQty:    toQty    || 0,
-    status:   'pending',
+    status:   isSwap ? 'completed' : 'pending',
     risk:     amount > 10000 ? 'medium' : 'low',
   });
+
+  if (isSwap) {
+    const inc = { [`walletBalances.${symbol}`]: -(qty || 0) };
+    if (toSymbol && toQty) inc[`walletBalances.${toSymbol}`] = toQty;
+    await User.findByIdAndUpdate(user._id, { $inc: inc });
+  }
 
   return NextResponse.json({ transaction: tx.toJSON() }, { status: 201 });
 }

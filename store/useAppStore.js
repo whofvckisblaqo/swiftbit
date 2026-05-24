@@ -97,7 +97,16 @@ const walletSlice = (set, get) => ({
       toSymbol: toCoin.symbol, toQty: toAmount,
       fee: usdValue * 0.001,
     });
-    if (tx) set(s => ({ transactions: [tx, ...s.transactions] }));
+    if (tx) {
+      set(s => ({
+        transactions: [tx, ...s.transactions],
+        assets: s.assets.map(a => {
+          if (a.id === fromCoin.id) return { ...a, balance: Math.max(0, a.balance - fromAmount), usdValue: Math.max(0, a.usdValue - usdValue) };
+          if (a.id === toCoin.id)   return { ...a, balance: a.balance + toAmount, usdValue: a.usdValue + toAmount * toCoin.price };
+          return a;
+        }),
+      }));
+    }
     return tx;
   },
 

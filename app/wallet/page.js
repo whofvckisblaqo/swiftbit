@@ -277,8 +277,8 @@ function SwapModal({ open, onClose }) {
     try {
       const tx = await executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
       if (tx) {
-        toast({ message: `Swap submitted — pending approval`, type: 'success' });
-        addNotification({ title: 'Swap Pending', body: `${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(4)} ${toCoin.symbol} awaiting approval`, type: 'transaction' });
+        toast({ message: `Swapped ${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(6)} ${toCoin.symbol}`, type: 'success' });
+        addNotification({ title: 'Swap Complete', body: `${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(4)} ${toCoin.symbol} executed`, type: 'transaction' });
         setDone(true);
       }
     } catch {
@@ -295,8 +295,7 @@ function SwapModal({ open, onClose }) {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
             <Check className="w-8 h-8 text-green-400" />
           </motion.div>
-          <p className="text-white font-bold">Swap submitted — pending approval</p>
-          <p className="text-xs text-gray-500 mt-1">Admin will review and process this shortly.</p>
+          <p className="text-white font-bold">Swap complete!</p>
         </div>
       ) : (
         <form onSubmit={handleSwap} className="space-y-3">

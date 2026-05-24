@@ -88,10 +88,10 @@ function SwapContent() {
       try {
         const tx = await executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
         if (tx) {
-          toast({ message: `Swap submitted — pending approval`, type: 'success' });
+          toast({ message: `Swapped ${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol}`, type: 'success' });
           addNotification({
-            title: 'Swap Pending',
-            body: `${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol} is awaiting approval`,
+            title: 'Swap Complete',
+            body: `${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol} executed`,
             type: 'transaction',
           });
           setStep(3);
