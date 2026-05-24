@@ -38,7 +38,7 @@ function QuickAction({ icon: Icon, label, onClick, color }) {
 function CoinItem({ coin, index }) {
   const positive = coin.change24h >= 0;
   return (
-    <Link href={`/wallet/market`}>
+    <Link href={`/wallet/asset/${coin.id}`}>
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.06 }}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
