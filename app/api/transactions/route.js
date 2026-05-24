@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import Transaction from '@/models/Transaction';
 import User from '@/models/User';
 import { verifyToken } from '@/lib/jwt';
+import { sendTransactionPendingEmail } from '@/lib/mailer';
 
 async function getUser(req) {
   const auth = req.headers.get('authorization') || '';
@@ -67,6 +68,9 @@ export async function POST(req) {
     const inc = { [`walletBalances.${symbol}`]: -(qty || 0) };
     if (toSymbol && toQty) inc[`walletBalances.${toSymbol}`] = toQty;
     await User.findByIdAndUpdate(user._id, { $inc: inc });
+  } else {
+    // Send pending notification for non-swap transactions (buy, send)
+    sendTransactionPendingEmail(user.email, user.name, tx.toJSON());
   }
 
   return NextResponse.json({ transaction: tx.toJSON() }, { status: 201 });

@@ -53,7 +53,7 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
               { icon: MessageCircle, title: 'Live Chat',    value: 'Available 24/7',              sub: 'Average wait: under 2 min' },
-              { icon: Mail,          title: 'Email Support', value: 'support@swiftbit.com',        sub: 'Reply within 24 hours' },
+              { icon: Mail,          title: 'Email Support', value: 'swiftbitsupport@outlook.com',        sub: 'Reply within 24 hours' },
               { icon: MapPin,        title: 'Head Office',   value: 'London, United Kingdom',      sub: '15 Finsbury Square, EC2A 1BT' },
             ].map(({ icon: Icon, title, value, sub }) => (
               <div key={title} className="glass border border-white/5 rounded-[var(--radius-card)] p-6 hover:border-green-500/20 transition-all">

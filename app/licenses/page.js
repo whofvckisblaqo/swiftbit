@@ -222,7 +222,7 @@ export default function LicensesPage() {
           <div className="glass border border-white/5 rounded-2xl p-6 text-center">
             <p className="text-gray-500 text-sm leading-relaxed">
               For verification requests or compliance enquiries, contact our legal team at{' '}
-              <a href="mailto:legal@swiftbit.com" className="text-green-400 hover:text-green-300 transition-colors">legal@swiftbit.com</a>.
+              <a href="mailto:swiftbitsupport@outlook.com" className="text-green-400 hover:text-green-300 transition-colors">swiftbitsupport@outlook.com</a>.
               Certificate copies are available upon request for institutional partners and regulators.
             </p>
           </div>

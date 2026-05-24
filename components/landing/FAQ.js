@@ -82,7 +82,7 @@ export default function FAQ() {
               Everything you need to know about SwiftBit. Can't find what you're looking for? Our support team is available 24/7.
             </p>
             <a
-              href="mailto:support@swiftbit.io"
+              href="mailto:swiftbitsupport@outlook.com"
               className="btn-neon inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm"
             >
               Contact Support

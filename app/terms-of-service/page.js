@@ -19,7 +19,7 @@ const sections = [
   },
   {
     title: '3. Account Registration',
-    content: `You agree to provide accurate, current, and complete information during registration and to update this information as necessary. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. Notify us immediately at support@swiftbit.com if you suspect any unauthorized access.`,
+    content: `You agree to provide accurate, current, and complete information during registration and to update this information as necessary. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. Notify us immediately at swiftbitsupport@outlook.com if you suspect any unauthorized access.`,
   },
   {
     title: '4. Permitted Use',
@@ -61,7 +61,7 @@ const sections = [
   },
   {
     title: '12. Contact',
-    content: `For legal enquiries: legal@swiftbit.com
+    content: `For legal enquiries: swiftbitsupport@outlook.com
 SwiftBit Technologies Ltd, 15 Finsbury Square, London EC2A 1BT, United Kingdom
 Registered in England & Wales · Company No. 11234567`,
   },

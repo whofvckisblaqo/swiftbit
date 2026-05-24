@@ -216,7 +216,7 @@ function HelpModal({ onClose }) {
         </div>
         <div className="flex gap-3 mb-5">
           {[
-            { icon: Mail, label: 'Email', val: 'support@swiftbit.app', color: '#6366f1' },
+            { icon: Mail, label: 'Email', val: 'swiftbitsupport@outlook.com', color: '#6366f1' },
             { icon: MessageCircle, label: 'Live Chat', val: 'Available 24/7', color: '#22c55e' },
           ].map(c => (
             <div key={c.label} className="flex-1 glass rounded-xl p-3 text-center border border-white/5">
