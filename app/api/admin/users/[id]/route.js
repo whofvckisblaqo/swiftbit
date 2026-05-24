@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
+import Transaction from '@/models/Transaction';
+import { cryptoAssets } from '@/lib/data';
 import { requireAdmin } from '@/lib/adminAuth';
+
+const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
+const COIN_NAMES  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.name]));
 
 export async function PATCH(req, { params }) {
   const admin = requireAdmin(req);
@@ -65,6 +70,30 @@ export async function PATCH(req, { params }) {
     await connectDB();
     const user = await User.findByIdAndUpdate(id, mongoOp, { new: true, strict: false });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    // Create a completed deposit transaction for each funded coin
+    if (Object.keys(incUpdate).length) {
+      const txDocs = Object.entries(incUpdate).map(([key, qty]) => {
+        const symbol = key.replace('walletBalances.', '');
+        const price  = COIN_PRICES[symbol] || 0;
+        return {
+          userId:    user._id,
+          userName:  user.name,
+          userEmail: user.email,
+          type:      'deposit',
+          amount:    qty * price,
+          coin:      COIN_NAMES[symbol] || symbol,
+          symbol,
+          qty,
+          price,
+          method:    'Admin Credit',
+          status:    'completed',
+          fee:       0,
+        };
+      });
+      await Transaction.insertMany(txDocs);
+    }
+
     return NextResponse.json({ user: user.toSafeObject() });
   } catch (err) {
     console.error('Admin user PATCH error:', err);
