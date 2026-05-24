@@ -493,9 +493,11 @@ export default function WalletDashboard() {
           </Link>
         </div>
         <div className="py-2">
-          {assets.map((coin, i) => (
-            <CoinItem key={coin.id} coin={coin} index={i} />
-          ))}
+          {[...assets]
+            .sort((a, b) => b.usdValue !== a.usdValue ? b.usdValue - a.usdValue : b.price - a.price)
+            .map((coin, i) => (
+              <CoinItem key={coin.id} coin={coin} index={i} />
+            ))}
         </div>
       </motion.div>
 
