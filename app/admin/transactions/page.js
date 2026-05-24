@@ -1,25 +1,37 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Download } from 'lucide-react';
+import { Search, Download, RefreshCw } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { adminTransactions } from '@/lib/data';
+import { useAuth, useToast } from '@/store/useAppStore';
 import { getStatusColor, getTxColor } from '@/lib/utils';
 
-const allTx = [
-  ...adminTransactions,
-  { id: 'TXN-84915', user: 'James Wilson', type: 'buy', amount: '$4,800', coin: 'ETH', status: 'completed', time: '1 hour ago' },
-  { id: 'TXN-84914', user: 'Liu Wei', type: 'deposit', amount: '$31,200', coin: 'USDT', status: 'pending', time: '2 hours ago' },
-  { id: 'TXN-84913', user: 'Amara Osei', type: 'sell', amount: '$2,100', coin: 'SOL', status: 'completed', time: '3 hours ago' },
-  { id: 'TXN-84912', user: 'Ivan Petrov', type: 'withdrawal', amount: '$18,500', coin: 'BTC', status: 'failed', time: '4 hours ago' },
-];
-
 export default function TransactionsPage() {
+  const { token } = useAuth();
+  const { toast } = useToast();
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, failed: 0, volume: 0 });
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const displayed = allTx.filter(tx => {
-    const matchSearch = tx.user.toLowerCase().includes(search.toLowerCase()) ||
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/transactions', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setTransactions(data.transactions || []);
+      if (data.stats) setStats(data.stats);
+    } catch { toast({ message: 'Failed to load transactions', type: 'error' }); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { if (token) fetchData(); }, [token]);
+
+  const fmt = (n) => n >= 1e9 ? `$${(n/1e9).toFixed(2)}B` : n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(2)}`;
+
+  const displayed = transactions.filter(tx => {
+    const matchSearch = tx.userName.toLowerCase().includes(search.toLowerCase()) ||
       tx.id.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === 'all' || tx.type === typeFilter;
     return matchSearch && matchType;
@@ -31,10 +43,10 @@ export default function TransactionsPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Volume', val: '$1.2B', color: 'text-white' },
-          { label: 'Completed', val: '98,421', color: 'text-green-400' },
-          { label: 'Pending', val: '1,284', color: 'text-yellow-400' },
-          { label: 'Failed', val: '342', color: 'text-red-400' },
+          { label: 'Total Volume', val: loading ? '—' : fmt(stats.volume), color: 'text-white' },
+          { label: 'Completed', val: loading ? '—' : stats.completed.toLocaleString(), color: 'text-green-400' },
+          { label: 'Pending', val: loading ? '—' : stats.pending.toLocaleString(), color: 'text-yellow-400' },
+          { label: 'Failed', val: loading ? '—' : stats.failed.toLocaleString(), color: 'text-red-400' },
         ].map(s => (
           <div key={s.label} className="glass rounded-2xl p-4 border border-white/5 text-center">
             <div className={`text-xl font-black ${s.color}`}>{s.val}</div>
@@ -51,12 +63,14 @@ export default function TransactionsPage() {
         </div>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
           className="glass border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-400 focus:outline-none bg-transparent appearance-none min-w-[160px]">
-          {['all', 'deposit', 'withdrawal', 'buy', 'sell', 'swap'].map(t => (
-            <option key={t} value={t} style={{ background: '#0d1117' }} className="capitalize">{t === 'all' ? 'All Types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>
+          {['all', 'deposit', 'withdrawal', 'buy', 'sell', 'swap', 'send', 'receive'].map(t => (
+            <option key={t} value={t} style={{ background: '#0d1117' }} className="capitalize">
+              {t === 'all' ? 'All Types' : t.charAt(0).toUpperCase() + t.slice(1)}
+            </option>
           ))}
         </select>
-        <button className="glass border border-white/10 rounded-xl px-5 py-2.5 text-sm text-gray-400 flex items-center gap-2 hover:text-white transition-all">
-          <Download className="w-4 h-4" /> Export CSV
+        <button onClick={fetchData} className="glass border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-all flex items-center gap-2">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </button>
       </div>
 
@@ -70,17 +84,24 @@ export default function TransactionsPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/3">
-              {displayed.map((tx, i) => (
-                <motion.tr key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                  className="hover:bg-white/2 transition-all">
-                  <td className="px-5 py-4 text-xs font-mono text-gray-500">{tx.id}</td>
-                  <td className="px-5 py-4 text-sm text-white font-medium">{tx.user}</td>
+            <tbody className="divide-y divide-white/[0.03]">
+              {loading ? (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">Loading transactions...</td></tr>
+              ) : displayed.length === 0 ? (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">No transactions yet</td></tr>
+              ) : displayed.map((tx, i) => (
+                <motion.tr key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                  className="hover:bg-white/[0.02] transition-all">
+                  <td className="px-5 py-4 text-xs font-mono text-gray-500">{tx.id.slice(-8).toUpperCase()}</td>
+                  <td className="px-5 py-4">
+                    <div className="text-sm font-medium text-white">{tx.userName}</div>
+                    <div className="text-xs text-gray-600">{tx.userEmail}</div>
+                  </td>
                   <td className="px-5 py-4">
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getTxColor(tx.type)}`}>{tx.type}</span>
                   </td>
-                  <td className="px-5 py-4 text-sm font-bold text-white">{tx.amount}</td>
-                  <td className="px-5 py-4 text-sm text-gray-400">{tx.coin}</td>
+                  <td className="px-5 py-4 text-sm font-bold text-white">{tx.amountFormatted}</td>
+                  <td className="px-5 py-4 text-sm text-gray-400">{tx.symbol}</td>
                   <td className="px-5 py-4">
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(tx.status)}`}>{tx.status}</span>
                   </td>
@@ -89,6 +110,9 @@ export default function TransactionsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="px-5 py-3 border-t border-white/5">
+          <span className="text-xs text-gray-600">Showing {displayed.length} of {transactions.length} transactions</span>
         </div>
       </motion.div>
     </div>

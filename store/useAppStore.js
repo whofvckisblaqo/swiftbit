@@ -4,6 +4,16 @@ import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { cryptoAssets, transactions as initialTx } from '@/lib/data';
 
+/* ─── DB persistence helper ──────────────────────────── */
+function persistTx(token, payload) {
+  if (!token) return;
+  fetch('/api/transactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
 /* ─── Auth slice ─────────────────────────────────────── */
 const authSlice = (set, get) => ({
   user: null,
@@ -44,7 +54,6 @@ const walletSlice = (set, get) => ({
   })),
 
   executeBuy: ({ coin, usdAmount, method }) => {
-    const asset = get().assets.find(a => a.id === coin.id);
     const cryptoAmount = usdAmount / coin.price;
     const fee = usdAmount * 0.015;
     const tx = {
@@ -66,23 +75,25 @@ const walletSlice = (set, get) => ({
         a.id === coin.id ? { ...a, balance: a.balance + cryptoAmount, usdValue: a.usdValue + usdAmount } : a
       ),
     }));
+    persistTx(get().token, { type: 'buy', amount: usdAmount, coin: coin.name, symbol: coin.symbol, qty: cryptoAmount, price: coin.price, method: method || 'Crypto', fee });
     return tx;
   },
 
   executeSwap: ({ fromCoin, toCoin, fromAmount }) => {
     const rate = fromCoin.price / toCoin.price;
     const toAmount = fromAmount * rate;
+    const usdValue = fromAmount * fromCoin.price;
     const tx = {
       id: `tx${Date.now()}`,
       type: 'swap',
       coin: `${fromCoin.symbol} → ${toCoin.symbol}`,
       symbol: fromCoin.symbol,
       amount: fromAmount,
-      usdValue: fromAmount * fromCoin.price,
+      usdValue,
       status: 'completed',
       time: 'just now',
       date: new Date().toLocaleString(),
-      fee: fromAmount * fromCoin.price * 0.001,
+      fee: usdValue * 0.001,
     };
     set(s => ({
       transactions: [tx, ...s.transactions],
@@ -92,6 +103,7 @@ const walletSlice = (set, get) => ({
         return a;
       }),
     }));
+    persistTx(get().token, { type: 'swap', amount: usdValue, coin: `${fromCoin.name} → ${toCoin.name}`, symbol: fromCoin.symbol, qty: fromAmount, price: fromCoin.price, fee: usdValue * 0.001 });
     return tx;
   },
 
@@ -116,6 +128,7 @@ const walletSlice = (set, get) => ({
         a.id === coin.id ? { ...a, balance: Math.max(0, a.balance - amount), usdValue: Math.max(0, a.usdValue - usdValue) } : a
       ),
     }));
+    persistTx(get().token, { type: 'send', amount: usdValue, coin: coin.name, symbol: coin.symbol, qty: amount, price: coin.price, address, fee: 0.25 });
     return tx;
   },
 });
