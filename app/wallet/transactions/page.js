@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, ArrowDownLeft, ArrowUpRight, ArrowUpDown, ShoppingCart, Landmark } from 'lucide-react';
-import { useWallet } from '@/store/useAppStore';
+import { Search, Filter, ArrowDownLeft, ArrowUpRight, ArrowUpDown, ShoppingCart, RefreshCw, Clock } from 'lucide-react';
+import { useAuth, useWallet } from '@/store/useAppStore';
 import { getStatusColor, getTxColor } from '@/lib/utils';
 
 const typeFilters = ['All', 'Buy', 'Sell', 'Send', 'Receive', 'Swap', 'Deposit'];
@@ -14,6 +14,7 @@ const txIcons = {
   receive: ArrowDownLeft,
   swap: ArrowUpDown,
   deposit: ArrowDownLeft,
+  withdrawal: ArrowUpRight,
   withdraw: ArrowUpRight,
 };
 
@@ -27,28 +28,27 @@ function TxItem({ tx, index }) {
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-      whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-      className="flex items-center gap-3 px-4 py-4 rounded-xl transition-all cursor-pointer"
+      transition={{ delay: index * 0.04 }}
+      className="flex items-center gap-3 px-4 py-4 rounded-xl transition-all"
     >
       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${txColor}`}>
-        <Icon className="w-5 h-5" />
+        {tx.status === 'pending' ? <Clock className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">
           <span className="text-sm font-semibold text-white capitalize">{tx.type}</span>
           <span className={`text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive ? '+' : '-'}${tx.usdValue.toLocaleString()}
+            {isPositive ? '+' : '-'}{tx.amountFormatted}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">{tx.coin}</span>
+            <span className="text-xs text-gray-500 truncate max-w-[120px]">{tx.coin}</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColor}`}>
               {tx.status}
             </span>
           </div>
-          <span className="text-xs text-gray-600">{tx.time}</span>
+          <span className="text-xs text-gray-600 flex-shrink-0">{tx.time}</span>
         </div>
       </div>
     </motion.div>
@@ -56,23 +56,55 @@ function TxItem({ tx, index }) {
 }
 
 export default function TransactionsPage() {
-  const { transactions } = useWallet();
+  const { token } = useAuth();
+  const { transactions: storeTxs } = useWallet();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
 
+  const fetchTransactions = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/transactions', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.transactions) setTransactions(data.transactions);
+    } catch {
+      // fall back to store transactions
+      setTransactions(storeTxs);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchTransactions(); }, [token]);
+
   const displayed = transactions.filter(tx => {
     const matchFilter = filter === 'All' || tx.type.toLowerCase() === filter.toLowerCase();
-    const matchSearch = tx.coin.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch = (tx.coin || '').toLowerCase().includes(search.toLowerCase()) ||
       tx.type.toLowerCase().includes(search.toLowerCase()) ||
-      tx.id.toLowerCase().includes(search.toLowerCase());
+      (tx.id || '').toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
+  const totalIn  = transactions.filter(t => ['buy','receive','deposit'].includes(t.type) && t.status === 'completed').reduce((s, t) => s + t.amount, 0);
+  const totalOut = transactions.filter(t => ['send','withdrawal','sell'].includes(t.type) && t.status === 'completed').reduce((s, t) => s + t.amount, 0);
+  const pending  = transactions.filter(t => t.status === 'pending').length;
+
   return (
     <div className="max-w-lg mx-auto px-4">
-      <div className="pt-14 pb-4">
-        <h1 className="text-2xl font-black text-white mb-1">History</h1>
-        <p className="text-sm text-gray-500">Your transaction history</p>
+      <div className="pt-14 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-white mb-1">History</h1>
+          <p className="text-sm text-gray-500">Your transaction history</p>
+        </div>
+        <button onClick={fetchTransactions}
+          className="glass border border-white/10 rounded-xl p-2.5 text-gray-400 hover:text-white transition-all">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {/* Search */}
@@ -87,9 +119,6 @@ export default function TransactionsPage() {
             className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/40 transition-all"
           />
         </div>
-        <button className="glass border border-white/10 rounded-xl px-4 flex items-center gap-2 text-gray-400 hover:text-white transition-all">
-          <Filter className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Type filters */}
@@ -106,22 +135,29 @@ export default function TransactionsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        {[
-          { label: 'Total In', val: '+$24,510', color: 'text-green-400' },
-          { label: 'Total Out', val: '-$9,832', color: 'text-red-400' },
-          { label: 'Net P&L', val: '+$14,678', color: 'text-white' },
-        ].map(s => (
-          <div key={s.label} className="glass rounded-xl p-3 text-center">
-            <div className={`text-sm font-bold ${s.color}`}>{s.val}</div>
-            <div className="text-xs text-gray-600 mt-0.5">{s.label}</div>
-          </div>
-        ))}
+        <div className="glass rounded-xl p-3 text-center">
+          <div className="text-sm font-bold text-green-400">+${totalIn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          <div className="text-xs text-gray-600 mt-0.5">Total In</div>
+        </div>
+        <div className="glass rounded-xl p-3 text-center">
+          <div className="text-sm font-bold text-red-400">-${totalOut.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          <div className="text-xs text-gray-600 mt-0.5">Total Out</div>
+        </div>
+        <div className="glass rounded-xl p-3 text-center">
+          <div className="text-sm font-bold text-yellow-400">{pending}</div>
+          <div className="text-xs text-gray-600 mt-0.5">Pending</div>
+        </div>
       </div>
 
       {/* Transactions */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="glass rounded-2xl overflow-hidden">
-        {displayed.length === 0 ? (
+        {loading ? (
+          <div className="py-16 text-center">
+            <RefreshCw className="w-6 h-6 text-gray-600 animate-spin mx-auto mb-3" />
+            <div className="text-sm text-gray-500">Loading transactions...</div>
+          </div>
+        ) : displayed.length === 0 ? (
           <div className="py-16 text-center">
             <div className="text-4xl mb-3">📭</div>
             <div className="text-sm text-gray-500">No transactions found</div>

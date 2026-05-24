@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Download, RefreshCw } from 'lucide-react';
+import { Search, Download, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useAuth, useToast } from '@/store/useAppStore';
 import { getStatusColor, getTxColor } from '@/lib/utils';
@@ -14,6 +14,18 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+
+  const handleAction = async (id, userName, status) => {
+    try {
+      await fetch(`/api/admin/transactions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status }),
+      });
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+      toast({ message: `Transaction ${status === 'completed' ? 'approved' : 'rejected'} for ${userName}`, type: status === 'completed' ? 'success' : 'error' });
+    } catch { toast({ message: 'Action failed', type: 'error' }); }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -79,16 +91,16 @@ export default function TransactionsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5">
-                {['TX ID', 'User', 'Type', 'Amount', 'Asset', 'Status', 'Time'].map(h => (
+                {['TX ID', 'User', 'Type', 'Amount', 'Asset', 'Status', 'Time', 'Action'].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-5 py-3.5">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
               {loading ? (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">Loading transactions...</td></tr>
+                <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-600 text-sm">Loading transactions...</td></tr>
               ) : displayed.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">No transactions yet</td></tr>
+                <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-600 text-sm">No transactions yet</td></tr>
               ) : displayed.map((tx, i) => (
                 <motion.tr key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
                   className="hover:bg-white/[0.02] transition-all">
@@ -106,6 +118,20 @@ export default function TransactionsPage() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(tx.status)}`}>{tx.status}</span>
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-500">{tx.time}</td>
+                  <td className="px-5 py-4">
+                    {tx.status === 'pending' && (
+                      <div className="flex gap-1.5">
+                        <button onClick={() => handleAction(tx.id, tx.userName, 'completed')}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25 transition-all font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button onClick={() => handleAction(tx.id, tx.userName, 'failed')}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all font-medium">
+                          <XCircle className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 </motion.tr>
               ))}
             </tbody>

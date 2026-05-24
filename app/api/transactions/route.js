@@ -20,7 +20,7 @@ export async function POST(req) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { type, amount, coin, symbol, qty, price, method, address, fee } = body;
+  const { type, amount, coin, symbol, qty, price, method, address, fee, toSymbol, toQty } = body;
 
   if (!type || !amount || !coin || !symbol) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -35,13 +35,15 @@ export async function POST(req) {
     amount,
     coin,
     symbol,
-    qty:    qty    || 0,
-    price:  price  || 0,
-    method: method || '',
-    address:address || '',
-    fee:    fee    || 0,
-    status: 'completed',
-    risk:   amount > 10000 ? 'medium' : 'low',
+    qty:      qty      || 0,
+    price:    price    || 0,
+    method:   method   || '',
+    address:  address  || '',
+    fee:      fee      || 0,
+    toSymbol: toSymbol || '',
+    toQty:    toQty    || 0,
+    status:   'pending',
+    risk:     amount > 10000 ? 'medium' : 'low',
   });
 
   return NextResponse.json({ transaction: tx.toJSON() }, { status: 201 });

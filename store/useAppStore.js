@@ -5,13 +5,15 @@ import { useShallow } from 'zustand/react/shallow';
 import { cryptoAssets, transactions as initialTx } from '@/lib/data';
 
 /* ─── DB persistence helper ──────────────────────────── */
-function persistTx(token, payload) {
-  if (!token) return;
-  fetch('/api/transactions', {
+async function postTx(token, payload) {
+  if (!token) return null;
+  const res = await fetch('/api/transactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
-  }).catch(() => {});
+  });
+  const data = await res.json();
+  return data.transaction || null;
 }
 
 /* ─── Auth slice ─────────────────────────────────────── */
@@ -73,82 +75,39 @@ const walletSlice = (set, get) => ({
     totalBalance: s.totalBalance + delta,
   })),
 
-  executeBuy: ({ coin, usdAmount, method }) => {
+  executeBuy: async ({ coin, usdAmount, method }) => {
     const cryptoAmount = usdAmount / coin.price;
     const fee = usdAmount * 0.015;
-    const tx = {
-      id: `tx${Date.now()}`,
-      type: 'buy',
-      coin: coin.name,
-      symbol: coin.symbol,
-      amount: cryptoAmount,
-      usdValue: usdAmount,
-      status: 'completed',
-      time: 'just now',
-      date: new Date().toLocaleString(),
-      fee,
-    };
-    set(s => ({
-      transactions: [tx, ...s.transactions],
-      totalBalance: s.totalBalance + usdAmount,
-      assets: s.assets.map(a =>
-        a.id === coin.id ? { ...a, balance: a.balance + cryptoAmount, usdValue: a.usdValue + usdAmount } : a
-      ),
-    }));
-    persistTx(get().token, { type: 'buy', amount: usdAmount, coin: coin.name, symbol: coin.symbol, qty: cryptoAmount, price: coin.price, method: method || 'Crypto', fee });
+    const tx = await postTx(get().token, {
+      type: 'buy', amount: usdAmount, coin: coin.name, symbol: coin.symbol,
+      qty: cryptoAmount, price: coin.price, method: method || 'Crypto', fee,
+    });
+    if (tx) set(s => ({ transactions: [tx, ...s.transactions] }));
     return tx;
   },
 
-  executeSwap: ({ fromCoin, toCoin, fromAmount }) => {
+  executeSwap: async ({ fromCoin, toCoin, fromAmount }) => {
     const rate = fromCoin.price / toCoin.price;
     const toAmount = fromAmount * rate;
     const usdValue = fromAmount * fromCoin.price;
-    const tx = {
-      id: `tx${Date.now()}`,
-      type: 'swap',
-      coin: `${fromCoin.symbol} → ${toCoin.symbol}`,
-      symbol: fromCoin.symbol,
-      amount: fromAmount,
-      usdValue,
-      status: 'completed',
-      time: 'just now',
-      date: new Date().toLocaleString(),
+    const tx = await postTx(get().token, {
+      type: 'swap', amount: usdValue,
+      coin: `${fromCoin.name} → ${toCoin.name}`,
+      symbol: fromCoin.symbol, qty: fromAmount, price: fromCoin.price,
+      toSymbol: toCoin.symbol, toQty: toAmount,
       fee: usdValue * 0.001,
-    };
-    set(s => ({
-      transactions: [tx, ...s.transactions],
-      assets: s.assets.map(a => {
-        if (a.id === fromCoin.id) return { ...a, balance: Math.max(0, a.balance - fromAmount) };
-        if (a.id === toCoin.id) return { ...a, balance: a.balance + toAmount };
-        return a;
-      }),
-    }));
-    persistTx(get().token, { type: 'swap', amount: usdValue, coin: `${fromCoin.name} → ${toCoin.name}`, symbol: fromCoin.symbol, qty: fromAmount, price: fromCoin.price, fee: usdValue * 0.001 });
+    });
+    if (tx) set(s => ({ transactions: [tx, ...s.transactions] }));
     return tx;
   },
 
-  executeSend: ({ coin, amount, address }) => {
+  executeSend: async ({ coin, amount, address }) => {
     const usdValue = amount * coin.price;
-    const tx = {
-      id: `tx${Date.now()}`,
-      type: 'send',
-      coin: coin.name,
-      symbol: coin.symbol,
-      amount,
-      usdValue,
-      status: 'completed',
-      time: 'just now',
-      date: new Date().toLocaleString(),
-      fee: 0.25,
-    };
-    set(s => ({
-      transactions: [tx, ...s.transactions],
-      totalBalance: Math.max(0, s.totalBalance - usdValue),
-      assets: s.assets.map(a =>
-        a.id === coin.id ? { ...a, balance: Math.max(0, a.balance - amount), usdValue: Math.max(0, a.usdValue - usdValue) } : a
-      ),
-    }));
-    persistTx(get().token, { type: 'send', amount: usdValue, coin: coin.name, symbol: coin.symbol, qty: amount, price: coin.price, address, fee: 0.25 });
+    const tx = await postTx(get().token, {
+      type: 'send', amount: usdValue, coin: coin.name, symbol: coin.symbol,
+      qty: amount, price: coin.price, address, fee: 0.25,
+    });
+    if (tx) set(s => ({ transactions: [tx, ...s.transactions] }));
     return tx;
   },
 });

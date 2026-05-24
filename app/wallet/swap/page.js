@@ -81,21 +81,26 @@ function SwapContent() {
     setFromAmount(toAmount || '');
   };
 
-  const handleSwap = () => {
+  const handleSwap = async () => {
     if (step === 1 && fromAmount) { setStep(2); return; }
     if (step === 2) {
       setLoading(true);
-      setTimeout(() => {
-        executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
-        toast({ message: `Swapped ${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol}`, type: 'success' });
-        addNotification({
-          title: 'Swap Executed',
-          body: `${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol} completed`,
-          type: 'transaction',
-        });
+      try {
+        const tx = await executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
+        if (tx) {
+          toast({ message: `Swap submitted — pending approval`, type: 'success' });
+          addNotification({
+            title: 'Swap Pending',
+            body: `${fromAmount} ${fromCoin.symbol} → ${toAmount} ${toCoin.symbol} is awaiting approval`,
+            type: 'transaction',
+          });
+          setStep(3);
+        }
+      } catch {
+        toast({ message: 'Swap failed. Please try again.', type: 'error' });
+      } finally {
         setLoading(false);
-        setStep(3);
-      }, 1400);
+      }
     }
   };
 

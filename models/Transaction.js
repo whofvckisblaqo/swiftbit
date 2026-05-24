@@ -15,6 +15,8 @@ const TransactionSchema = new mongoose.Schema({
   risk:       { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   status:     { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
   fee:        { type: Number, default: 0 },
+  toSymbol:   { type: String, default: '' },   // swap destination coin symbol
+  toQty:      { type: Number, default: 0 },    // swap destination amount
 }, { timestamps: true });
 
 TransactionSchema.methods.toJSON = function () {
@@ -36,6 +38,8 @@ TransactionSchema.methods.toJSON = function () {
     risk:      obj.risk,
     status:    obj.status,
     fee:       obj.fee,
+    toSymbol:  obj.toSymbol || '',
+    toQty:     obj.toQty    || 0,
     createdAt: obj.createdAt,
     time:      timeAgo(obj.createdAt),
   };

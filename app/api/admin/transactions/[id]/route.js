@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Transaction from '@/models/Transaction';
+import User from '@/models/User';
 import { requireAdmin } from '@/lib/adminAuth';
 
 export async function PATCH(req, { params }) {
@@ -10,13 +11,36 @@ export async function PATCH(req, { params }) {
   const { id } = await params;
   const { status, risk } = await req.json();
 
-  const allowed = {};
-  if (status) allowed.status = status;
-  if (risk)   allowed.risk   = risk;
-
   await connectDB();
-  const tx = await Transaction.findByIdAndUpdate(id, allowed, { new: true });
+  const tx = await Transaction.findById(id);
   if (!tx) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  if (risk) tx.risk = risk;
+
+  if (status && status !== tx.status) {
+    // Apply balance changes only when approving a pending transaction
+    if (status === 'completed' && tx.status === 'pending') {
+      const inc = {};
+
+      if (tx.type === 'buy') {
+        inc[`walletBalances.${tx.symbol}`] = tx.qty;
+      } else if (tx.type === 'send' || tx.type === 'withdrawal') {
+        inc[`walletBalances.${tx.symbol}`] = -tx.qty;
+      } else if (tx.type === 'swap') {
+        inc[`walletBalances.${tx.symbol}`] = -tx.qty;
+        if (tx.toSymbol && tx.toQty) {
+          inc[`walletBalances.${tx.toSymbol}`] = tx.toQty;
+        }
+      }
+
+      if (Object.keys(inc).length > 0) {
+        await User.findByIdAndUpdate(tx.userId, { $inc: inc });
+      }
+    }
+
+    tx.status = status;
+  }
+
+  await tx.save();
   return NextResponse.json({ transaction: tx.toJSON() });
 }

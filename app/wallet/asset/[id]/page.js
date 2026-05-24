@@ -44,18 +44,23 @@ function SendSheet({ coin, onClose }) {
 
   const usdValue = parseFloat(amount || 0) * coin.price;
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!amount || !address) return;
     setLoading(true);
-    setTimeout(() => {
-      executeSend({ coin, amount: parseFloat(amount), address });
-      toast({ message: `Sent ${amount} ${coin.symbol} successfully`, type: 'success' });
-      addNotification({ title: `${coin.symbol} Sent`, body: `${amount} ${coin.symbol} sent to ${address.slice(0, 10)}…`, type: 'transaction' });
+    try {
+      const tx = await executeSend({ coin, amount: parseFloat(amount), address });
+      if (tx) {
+        toast({ message: `${amount} ${coin.symbol} sent — pending approval`, type: 'success' });
+        addNotification({ title: `${coin.symbol} Sent`, body: `${amount} ${coin.symbol} sent to ${address.slice(0, 10)}… (pending)`, type: 'transaction' });
+        setDone(true);
+        setTimeout(() => { onClose(); }, 1800);
+      }
+    } catch {
+      toast({ message: 'Send failed. Please try again.', type: 'error' });
+    } finally {
       setLoading(false);
-      setDone(true);
-      setTimeout(() => { onClose(); }, 1800);
-    }, 1400);
+    }
   };
 
   return (
