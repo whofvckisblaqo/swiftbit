@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload }) => {
 
 /* ── Send sheet ── */
 function SendSheet({ coin, onClose }) {
-  const { executeSend } = useWallet();
+  const { assets, executeSend } = useWallet();
   const { toast } = useToast();
   const { addNotification } = useNotifs();
   const [amount, setAmount] = useState('');
@@ -43,6 +43,9 @@ function SendSheet({ coin, onClose }) {
   const [done, setDone] = useState(false);
 
   const usdValue = parseFloat(amount || 0) * coin.price;
+
+  const ethBalance = assets.find(a => a.symbol === 'ETH')?.balance || 0;
+  const needsEthGas = coin.symbol === 'USDT_ERC20' && ethBalance < 0.5;
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -89,6 +92,17 @@ function SendSheet({ coin, onClose }) {
         </div>
       ) : (
         <form onSubmit={handleSend} className="space-y-4">
+          {needsEthGas && (
+            <div className="flex items-start gap-3 rounded-xl p-3 border border-orange-500/30 bg-orange-500/5">
+              <span className="text-orange-400 text-base flex-shrink-0">⚠</span>
+              <div>
+                <p className="text-xs font-semibold text-orange-400 mb-0.5">Insufficient ETH for gas</p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Sending USDT ERC20 requires at least <span className="text-white font-semibold">0.5 ETH</span> to cover network gas fees. Your ETH balance: <span className="text-white font-semibold">{ethBalance.toFixed(4)} ETH</span>.
+                </p>
+              </div>
+            </div>
+          )}
           <div>
             <label className="text-xs text-gray-500 mb-1.5 block">Recipient address</label>
             <input value={address} onChange={e => setAddress(e.target.value)}
@@ -109,8 +123,8 @@ function SendSheet({ coin, onClose }) {
             {amount && <p className="text-xs text-gray-600 mt-1">≈ ${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
           </div>
           <p className="text-xs text-gray-600">Network fee: ~$0.25 · Est. arrival: &lt;1 min</p>
-          <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+          <motion.button type="submit" disabled={loading || needsEthGas} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
             {loading
               ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
               : <><Send className="w-4 h-4" /> Send {coin.symbol}</>}
