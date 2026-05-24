@@ -47,8 +47,14 @@ const UserSchema = new mongoose.Schema(
     vipLevel:        { type: Number, default: 0 },
     role:            { type: String, enum: ['user', 'admin'], default: 'user' },
     status:          { type: String, enum: ['active', 'suspended'], default: 'active' },
-    walletAddresses: { type: WalletAddressSchema, default: () => ({}) },
-    walletBalances:  { type: WalletBalanceSchema,  default: () => ({}) },
+    walletAddresses:      { type: WalletAddressSchema, default: () => ({}) },
+    walletBalances:       { type: WalletBalanceSchema,  default: () => ({}) },
+    pendingNotifications: [{
+      title: { type: String, required: true },
+      body:  { type: String, required: true },
+      type:  { type: String, default: 'account' },
+      _id:   false,
+    }],
   },
   { timestamps: true }
 );

@@ -47,6 +47,20 @@ export async function PATCH(req, { params }) {
   if (Object.keys(setUpdate).length) mongoOp.$set = setUpdate;
   if (Object.keys(incUpdate).length) mongoOp.$inc = incUpdate;
 
+  // Build a funding notification if any balances were added
+  if (Object.keys(incUpdate).length) {
+    const lines = Object.entries(incUpdate)
+      .map(([key, val]) => `${val} ${key.replace('walletBalances.', '')}`)
+      .join(', ');
+    mongoOp.$push = {
+      pendingNotifications: {
+        title: 'Wallet Funded by Admin',
+        body:  `Your wallet has been credited: ${lines}.`,
+        type:  'account',
+      },
+    };
+  }
+
   await connectDB();
   const user = await User.findByIdAndUpdate(id, mongoOp, { new: true });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
