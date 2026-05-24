@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpDown, ChevronDown, Info, CheckCircle2 } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Info, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
+import Link from 'next/link';
 import { useWallet, useToast, useNotifs } from '@/store/useAppStore';
 import KycGate from '@/components/ui/KycGate';
 
@@ -212,9 +213,28 @@ function SwapContent() {
         )}
       </AnimatePresence>
 
+      {toCoin?.symbol === 'ETH' && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl p-4 mb-4 border border-orange-500/30 bg-orange-500/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-orange-400 mb-1">ETH Swaps Unavailable</p>
+              <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                Converting to Ethereum (ETH) via swap is not supported. To receive ETH, please make a direct deposit to your ETH wallet address.
+              </p>
+              <Link href="/wallet/receive"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-orange-500/20 border border-orange-500/30 px-3 py-2 rounded-xl hover:bg-orange-500/30 transition-all">
+                <Download className="w-3.5 h-3.5" /> Go to Receive
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={handleSwap}
-        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading}
+        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading || toCoin?.symbol === 'ETH'}
         className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
         {loading ? (
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}

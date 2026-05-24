@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Bell, Eye, EyeOff, Send, Download, ArrowUpDown, CreditCard, TrendingUp, TrendingDown, Copy, Check, ChevronDown } from 'lucide-react';
+import { Bell, Eye, EyeOff, Send, Download, ArrowUpDown, CreditCard, TrendingUp, TrendingDown, Copy, Check, ChevronDown, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { portfolioData } from '@/lib/data';
 import { useWallet, useAuth, useToast, useNotifs } from '@/store/useAppStore';
@@ -338,7 +338,18 @@ function SwapModal({ open, onClose }) {
             </div>
           )}
 
-          <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+          {toCoin && assets.find(a => a.id === toId)?.symbol === 'ETH' && (
+            <div className="rounded-xl p-3 border border-orange-500/30 bg-orange-500/5 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-orange-400 mb-0.5">ETH Swaps Unavailable</p>
+                <p className="text-xs text-gray-500">Converting to ETH via swap is not supported. Please make a direct ETH deposit instead.</p>
+                <Link href="/wallet/receive" onClick={onClose} className="text-xs text-orange-300 underline mt-1 inline-block">Go to Receive →</Link>
+              </div>
+            </div>
+          )}
+
+          <motion.button type="submit" disabled={loading || assets.find(a => a.id === toId)?.symbol === 'ETH'} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             className="w-full btn-neon text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-70">
             {loading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> : <><ArrowUpDown className="w-4 h-4" /> Swap</>}
           </motion.button>
