@@ -54,7 +54,6 @@ function SendSheet({ coin, onClose }) {
         toast({ message: `${amount} ${coin.symbol} sent — pending approval`, type: 'success' });
         addNotification({ title: `${coin.symbol} Sent`, body: `${amount} ${coin.symbol} sent to ${address.slice(0, 10)}… (pending)`, type: 'transaction' });
         setDone(true);
-        setTimeout(() => { onClose(); }, 1800);
       }
     } catch {
       toast({ message: 'Send failed. Please try again.', type: 'error' });
@@ -85,7 +84,8 @@ function SendSheet({ coin, onClose }) {
             className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
             <Check className="w-8 h-8 text-green-400" />
           </motion.div>
-          <p className="text-white font-bold">Sent successfully!</p>
+          <p className="text-white font-bold">Sent — pending approval</p>
+          <p className="text-xs text-gray-500 mt-1">Admin will process this shortly</p>
         </div>
       ) : (
         <form onSubmit={handleSend} className="space-y-4">

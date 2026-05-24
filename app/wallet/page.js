@@ -78,18 +78,22 @@ function SendModal({ open, onClose }) {
 
   const selected = coin || assets[0];
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!amount || !address) return;
     setLoading(true);
-    setTimeout(() => {
-      executeSend({ coin: selected, amount: parseFloat(amount), address });
-      toast({ message: `Sent ${amount} ${selected.symbol} successfully`, type: 'success' });
-      addNotification({ title: `${selected.symbol} Sent`, body: `${amount} ${selected.symbol} sent to ${address.slice(0, 8)}...`, type: 'transaction' });
+    try {
+      const tx = await executeSend({ coin: selected, amount: parseFloat(amount), address });
+      if (tx) {
+        toast({ message: `${amount} ${selected.symbol} sent — pending approval`, type: 'success' });
+        addNotification({ title: `${selected.symbol} Sent`, body: `${amount} ${selected.symbol} sent to ${address.slice(0, 8)}... (pending)`, type: 'transaction' });
+        setDone(true);
+      }
+    } catch {
+      toast({ message: 'Send failed. Please try again.', type: 'error' });
+    } finally {
       setLoading(false);
-      setDone(true);
-      setTimeout(() => { setDone(false); setAmount(''); setAddress(''); onClose(); }, 1800);
-    }, 1400);
+    }
   };
 
   return (
@@ -99,7 +103,8 @@ function SendModal({ open, onClose }) {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
             <Check className="w-8 h-8 text-green-400" />
           </motion.div>
-          <p className="text-white font-bold">Sent successfully!</p>
+          <p className="text-white font-bold">Sent — pending approval</p>
+          <p className="text-xs text-gray-500 mt-1">Admin will review and process this shortly.</p>
         </div>
       ) : (
         <form onSubmit={handleSend} className="space-y-4">
@@ -162,18 +167,22 @@ function BuyModal({ open, onClose }) {
   const cryptoAmount = selected ? (parseFloat(usdAmount || 0) / selected.price) : 0;
   const fee = parseFloat(usdAmount || 0) * 0.015;
 
-  const handleBuy = (e) => {
+  const handleBuy = async (e) => {
     e.preventDefault();
     if (!usdAmount) return;
     setLoading(true);
-    setTimeout(() => {
-      executeBuy({ coin: selected, usdAmount: parseFloat(usdAmount), method });
-      toast({ message: `Bought ${cryptoAmount.toFixed(6)} ${selected.symbol}`, type: 'success' });
-      addNotification({ title: `${selected.symbol} Purchased`, body: `You bought ${cryptoAmount.toFixed(4)} ${selected.symbol} for $${usdAmount}`, type: 'transaction' });
+    try {
+      const tx = await executeBuy({ coin: selected, usdAmount: parseFloat(usdAmount), method });
+      if (tx) {
+        toast({ message: `Buy submitted — pending approval`, type: 'success' });
+        addNotification({ title: `${selected.symbol} Buy Pending`, body: `${cryptoAmount.toFixed(4)} ${selected.symbol} purchase is pending approval`, type: 'transaction' });
+        setDone(true);
+      }
+    } catch {
+      toast({ message: 'Buy failed. Please try again.', type: 'error' });
+    } finally {
       setLoading(false);
-      setDone(true);
-      setTimeout(() => { setDone(false); setUsdAmount(''); onClose(); }, 1800);
-    }, 1400);
+    }
   };
 
   return (
@@ -183,7 +192,8 @@ function BuyModal({ open, onClose }) {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
             <Check className="w-8 h-8 text-green-400" />
           </motion.div>
-          <p className="text-white font-bold">Purchase complete!</p>
+          <p className="text-white font-bold">Buy submitted — pending approval</p>
+          <p className="text-xs text-gray-500 mt-1">Admin will review and process this shortly.</p>
         </div>
       ) : (
         <form onSubmit={handleBuy} className="space-y-4">
@@ -260,18 +270,22 @@ function SwapModal({ open, onClose }) {
 
   const flip = () => { setFromId(toId); setToId(fromId); setFromAmount(''); };
 
-  const handleSwap = (e) => {
+  const handleSwap = async (e) => {
     e.preventDefault();
     if (!fromAmount) return;
     setLoading(true);
-    setTimeout(() => {
-      executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
-      toast({ message: `Swapped ${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(6)} ${toCoin.symbol}`, type: 'success' });
-      addNotification({ title: 'Swap Executed', body: `${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(4)} ${toCoin.symbol}`, type: 'transaction' });
+    try {
+      const tx = await executeSwap({ fromCoin, toCoin, fromAmount: parseFloat(fromAmount) });
+      if (tx) {
+        toast({ message: `Swap submitted — pending approval`, type: 'success' });
+        addNotification({ title: 'Swap Pending', body: `${fromAmount} ${fromCoin.symbol} → ${toAmount.toFixed(4)} ${toCoin.symbol} awaiting approval`, type: 'transaction' });
+        setDone(true);
+      }
+    } catch {
+      toast({ message: 'Swap failed. Please try again.', type: 'error' });
+    } finally {
       setLoading(false);
-      setDone(true);
-      setTimeout(() => { setDone(false); setFromAmount(''); onClose(); }, 1800);
-    }, 1400);
+    }
   };
 
   return (
@@ -281,7 +295,8 @@ function SwapModal({ open, onClose }) {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
             <Check className="w-8 h-8 text-green-400" />
           </motion.div>
-          <p className="text-white font-bold">Swap complete!</p>
+          <p className="text-white font-bold">Swap submitted — pending approval</p>
+          <p className="text-xs text-gray-500 mt-1">Admin will review and process this shortly.</p>
         </div>
       ) : (
         <form onSubmit={handleSwap} className="space-y-3">
@@ -497,7 +512,7 @@ export default function WalletDashboard() {
                 <div className="text-xs text-gray-500">{tx.time}</div>
               </div>
               <div className={`text-sm font-semibold ${tx.type === 'send' ? 'text-red-400' : 'text-green-400'}`}>
-                {tx.type === 'send' ? '-' : '+'}${tx.usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {tx.type === 'send' ? '-' : '+'}${(tx.usdValue ?? tx.amount ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </div>
             </motion.div>
           ))}
