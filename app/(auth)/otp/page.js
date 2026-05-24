@@ -1,22 +1,24 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap, Shield, ArrowRight } from 'lucide-react';
 
-export default function OTPPage() {
+function OTPForm() {
   const router = useRouter();
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const params = useSearchParams();
+  const email  = params.get('email') || '';
+
+  const [otp,     setOtp]     = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [resent, setResent] = useState(false);
+  const [error,   setError]   = useState('');
+  const [resent,  setResent]  = useState(false);
   const refs = useRef([]);
 
   const handleInput = (i, val) => {
     if (!/^\d*$/.test(val)) return;
-    const next = [...otp];
-    next[i] = val.slice(-1);
-    setOtp(next);
+    const next = [...otp]; next[i] = val.slice(-1); setOtp(next);
     if (val && i < 5) refs.current[i + 1]?.focus();
   };
 
@@ -31,14 +33,36 @@ export default function OTPPage() {
     refs.current[Math.min(text.length, 5)]?.focus();
   };
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (otp.join('').length !== 6) return;
+    setError('');
     setLoading(true);
-    setTimeout(() => router.push('/wallet'), 1500);
-  };
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otp.join('') }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Invalid code'); setLoading(false); return; }
+      router.push(`/reset-password?token=${encodeURIComponent(data.resetToken)}`);
+    } catch {
+      setError('Network error. Please try again.');
+      setLoading(false);
+    }
+  }
 
-  const resend = () => { setResent(true); setTimeout(() => setResent(false), 3000); };
+  async function handleResend() {
+    if (!email) return;
+    setResent(true);
+    await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    setTimeout(() => setResent(false), 4000);
+  }
 
   const filled = otp.join('').length === 6;
 
@@ -64,9 +88,17 @@ export default function OTPPage() {
               className="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4 glow-green-sm">
               <Shield className="w-8 h-8 text-green-400" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-white mb-2">Verify your identity</h1>
-            <p className="text-gray-500 text-sm">Enter the 6-digit code sent to your email</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Enter reset code</h1>
+            <p className="text-gray-500 text-sm">
+              {email ? <>Code sent to <span className="text-white">{email}</span></> : 'Enter the 6-digit code from your email'}
+            </p>
           </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-5 text-red-400 text-sm text-center">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="flex gap-2 justify-center mb-8" onPaste={handlePaste}>
@@ -87,23 +119,38 @@ export default function OTPPage() {
             <motion.button type="submit" disabled={!filled || loading}
               whileHover={{ scale: filled ? 1.02 : 1 }} whileTap={{ scale: filled ? 0.97 : 1 }}
               className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
-              {loading ? (
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                  className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
-              ) : <> Verify & Continue <ArrowRight className="w-4 h-4" /></>}
+              {loading
+                ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                : <> Verify Code <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Didn't receive the code?{' '}
-              <button onClick={resend} className="text-green-400 hover:text-green-300 font-semibold transition-colors">
-                {resent ? '✓ Sent!' : 'Resend'}
+              <button onClick={handleResend} disabled={resent}
+                className="text-green-400 hover:text-green-300 font-semibold transition-colors disabled:opacity-60">
+                {resent ? '✓ Sent again!' : 'Resend'}
               </button>
             </p>
           </div>
         </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center mt-6">
+          <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
+            ← Use a different email
+          </Link>
+        </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function OTPPage() {
+  return (
+    <Suspense>
+      <OTPForm />
+    </Suspense>
   );
 }

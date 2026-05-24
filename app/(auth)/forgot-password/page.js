@@ -2,18 +2,34 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Zap, ArrowRight, ArrowLeft, Mail } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const router = useRouter();
+  const [email, setEmail]   = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState('');
+  const [sent, setSent]     = useState(false);
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSent(true); }, 1500);
-  };
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Something went wrong'); setLoading(false); return; }
+      setSent(true);
+    } catch {
+      setError('Network error. Please try again.');
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-hero flex items-center justify-center px-4 relative overflow-hidden">
@@ -39,27 +55,30 @@ export default function ForgotPasswordPage() {
                   <Mail className="w-8 h-8 text-green-400" />
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-2">Forgot password?</h1>
-                <p className="text-gray-500 text-sm">Enter your email and we'll send you a reset link.</p>
+                <p className="text-gray-500 text-sm">Enter your email and we'll send you a 6-digit reset code.</p>
               </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-5 text-red-400 text-sm text-center">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">Email address</label>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    type="email" value={email} onChange={e => setEmail(e.target.value)} required
                     placeholder="you@example.com"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-green-500/50 transition-all"
-                    required
                   />
                 </div>
                 <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2">
-                  {loading ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
-                  ) : <> Send Reset Link <ArrowRight className="w-4 h-4" /></>}
+                  className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+                  {loading
+                    ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                        className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                    : <> Send Reset Code <ArrowRight className="w-4 h-4" /></>}
                 </motion.button>
               </form>
             </>
@@ -70,11 +89,13 @@ export default function ForgotPasswordPage() {
               </div>
               <h2 className="text-2xl font-bold text-white mb-3">Check your inbox</h2>
               <p className="text-gray-500 text-sm mb-6">
-                We've sent a password reset link to <span className="text-white font-medium">{email}</span>
+                We've sent a 6-digit code to <span className="text-white font-medium">{email}</span>
               </p>
-              <Link href="/otp" className="btn-neon inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm">
-                Enter OTP Code
-              </Link>
+              <button
+                onClick={() => router.push(`/otp?email=${encodeURIComponent(email)}`)}
+                className="btn-neon inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-xl text-sm">
+                Enter Code <ArrowRight className="w-4 h-4" />
+              </button>
             </motion.div>
           )}
         </motion.div>
