@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Copy, Share2, Check, ChevronDown, AlertCircle } from 'lucide-react';
 import { cryptoAssets } from '@/lib/data';
 import { useAuth } from '@/store/useAppStore';
-import KycGate from '@/components/ui/KycGate';
 
 const COIN_SYMBOLS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
@@ -144,9 +143,5 @@ function ReceiveContent() {
 }
 
 export default function ReceivePage() {
-  return (
-    <KycGate>
-      <ReceiveContent />
-    </KycGate>
-  );
+  return <ReceiveContent />;
 }
