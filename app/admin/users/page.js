@@ -1,17 +1,45 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, UserPlus, MoreVertical, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Search, UserPlus, MoreVertical, ShieldOff, ShieldCheck, RefreshCw } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { useAdminStore, useToast } from '@/store/useAppStore';
+import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
 
 export default function UsersPage() {
-  const { users, toggleUserStatus } = useAdminStore();
+  const { token } = useAuth();
   const { toast } = useToast();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [menuOpen, setMenuOpen] = useState(null);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch { toast({ message: 'Failed to load users', type: 'error' }); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
+
+  const handleToggle = async (u) => {
+    const next = u.status === 'active' ? 'suspended' : 'active';
+    try {
+      await fetch(`/api/admin/users/${u.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: next }),
+      });
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: next } : x));
+      toast({ message: `${u.name} has been ${next}`, type: next === 'active' ? 'success' : 'warning' });
+    } catch { toast({ message: 'Action failed', type: 'error' }); }
+    setMenuOpen(null);
+  };
 
   const displayed = users.filter(u => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -20,26 +48,19 @@ export default function UsersPage() {
     return matchSearch && matchStatus;
   });
 
-  const handleToggle = (u) => {
-    toggleUserStatus(u.id);
-    const next = u.status === 'active' ? 'suspended' : 'active';
-    toast({ message: `${u.name} has been ${next}`, type: next === 'active' ? 'success' : 'warning' });
-    setMenuOpen(null);
-  };
-
   return (
     <div onClick={() => setMenuOpen(null)}>
-      <AdminHeader title="Users" subtitle={`${users.length} demo users`} />
+      <AdminHeader title="Users" subtitle={`${users.length} registered users`} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Users',  val: '248,392', color: 'text-white'       },
-          { label: 'Active',       val: users.filter(u => u.status === 'active').length,    color: 'text-green-400'  },
-          { label: 'Suspended',    val: users.filter(u => u.status === 'suspended').length, color: 'text-red-400'    },
-          { label: 'KYC Pending',  val: '284',     color: 'text-yellow-400'  },
+          { label: 'Total Users', val: users.length, color: 'text-white' },
+          { label: 'Active', val: users.filter(u => u.status === 'active').length, color: 'text-green-400' },
+          { label: 'Suspended', val: users.filter(u => u.status === 'suspended').length, color: 'text-red-400' },
+          { label: 'KYC Pending', val: users.filter(u => u.kycStatus === 'pending').length, color: 'text-yellow-400' },
         ].map(s => (
           <div key={s.label} className="glass rounded-2xl p-4 border border-white/5 text-center">
-            <div className={`text-xl font-black ${s.color}`}>{s.val}</div>
+            <div className={`text-xl font-black ${s.color}`}>{loading ? '—' : s.val}</div>
             <div className="text-xs text-gray-500 mt-1">{s.label}</div>
           </div>
         ))}
@@ -57,8 +78,8 @@ export default function UsersPage() {
           <option value="active" style={{ background: '#0d1117' }}>Active</option>
           <option value="suspended" style={{ background: '#0d1117' }}>Suspended</option>
         </select>
-        <button className="btn-neon text-white text-sm font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2">
-          <UserPlus className="w-4 h-4" /> Add User
+        <button onClick={fetchUsers} className="glass border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-all flex items-center gap-2">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </button>
       </div>
 
@@ -67,19 +88,23 @@ export default function UsersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5">
-                {['User', 'Balance', 'KYC', 'Status', 'Country', 'Joined', ''].map(h => (
+                {['User', 'Role', 'KYC', 'Status', 'Joined', ''].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-5 py-3.5">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
-              {displayed.map((u, i) => (
+              {loading ? (
+                <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-600 text-sm">Loading users...</td></tr>
+              ) : displayed.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-600 text-sm">No users found</td></tr>
+              ) : displayed.map((u, i) => (
                 <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }} className="hover:bg-white/[0.02] transition-all">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                        {u.name.split(' ').map(n => n[0]).join('')}
+                        {u.avatar || u.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-white">{u.name}</div>
@@ -87,48 +112,47 @@ export default function UsersPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm font-semibold text-white">{u.balance}</td>
                   <td className="px-5 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.kyc)}`}>{u.kyc}</span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${u.role === 'admin' ? 'text-purple-400 bg-purple-500/10' : 'text-gray-400 bg-gray-500/10'}`}>{u.role}</span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.kycStatus)}`}>{u.kycStatus}</span>
                   </td>
                   <td className="px-5 py-4">
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.status)}`}>{u.status}</span>
                   </td>
-                  <td className="px-5 py-4 text-sm text-gray-400">{u.country}</td>
-                  <td className="px-5 py-4 text-sm text-gray-500">{u.joined}</td>
+                  <td className="px-5 py-4 text-sm text-gray-500">{u.joinedDate}</td>
                   <td className="px-5 py-4 relative">
-                    <button onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === u.id ? null : u.id); }}
-                      className="p-1.5 rounded-lg glass border border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/15 transition-all">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    <AnimatePresence>
-                      {menuOpen === u.id && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          onClick={e => e.stopPropagation()}
-                          className="absolute right-5 top-12 z-20 glass-dark border border-white/10 rounded-xl overflow-hidden min-w-[160px] shadow-xl">
-                          <button onClick={() => handleToggle(u)}
-                            className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-all hover:bg-white/5 ${u.status === 'active' ? 'text-red-400' : 'text-green-400'}`}>
-                            {u.status === 'active'
-                              ? <><ShieldOff className="w-4 h-4" /> Suspend User</>
-                              : <><ShieldCheck className="w-4 h-4" /> Reactivate User</>}
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {u.role !== 'admin' && (
+                      <>
+                        <button onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === u.id ? null : u.id); }}
+                          className="p-1.5 rounded-lg glass border border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/15 transition-all">
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        <AnimatePresence>
+                          {menuOpen === u.id && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()}
+                              className="absolute right-5 top-12 z-20 glass-dark border border-white/10 rounded-xl overflow-hidden min-w-[160px] shadow-xl">
+                              <button onClick={() => handleToggle(u)}
+                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-all hover:bg-white/5 ${u.status === 'active' ? 'text-red-400' : 'text-green-400'}`}>
+                                {u.status === 'active'
+                                  ? <><ShieldOff className="w-4 h-4" /> Suspend User</>
+                                  : <><ShieldCheck className="w-4 h-4" /> Reactivate User</>}
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    )}
                   </td>
                 </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between">
-          <span className="text-xs text-gray-600">Showing {displayed.length} demo users</span>
-          <div className="flex gap-1">
-            {['Previous', '1', '2', '3', 'Next'].map(p => (
-              <button key={p} className={`px-3 py-1.5 rounded-lg text-xs transition-all ${p === '1' ? 'bg-green-500/20 text-green-400' : 'text-gray-600 hover:text-gray-300 glass border border-white/5'}`}>{p}</button>
-            ))}
-          </div>
+        <div className="px-5 py-3 border-t border-white/5">
+          <span className="text-xs text-gray-600">Showing {displayed.length} of {users.length} users</span>
         </div>
       </motion.div>
     </div>

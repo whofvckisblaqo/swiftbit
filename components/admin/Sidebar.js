@@ -26,7 +26,7 @@ const navItems = [
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ mobile = false }) {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -34,7 +34,7 @@ export default function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 72 : 240 }}
       transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className="hidden lg:flex flex-col h-screen sticky top-0 glass-dark border-r border-white/5 flex-shrink-0 overflow-hidden"
+      className={`${mobile ? 'flex w-full' : 'hidden lg:flex'} flex-col h-screen sticky top-0 glass-dark border-r border-white/5 flex-shrink-0 overflow-hidden`}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">

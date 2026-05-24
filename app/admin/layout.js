@@ -16,8 +16,8 @@ export default function AdminLayout({ children }) {
         {mobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-64 glass-dark border-r border-white/5 overflow-y-auto">
-              <Sidebar />
+            <div className="absolute left-0 top-0 bottom-0 w-64 overflow-y-auto">
+              <Sidebar mobile />
             </div>
           </div>
         )}
