@@ -61,9 +61,13 @@ export async function PATCH(req, { params }) {
     };
   }
 
-  await connectDB();
-  const user = await User.findByIdAndUpdate(id, mongoOp, { new: true });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-  return NextResponse.json({ user: user.toSafeObject() });
+  try {
+    await connectDB();
+    const user = await User.findByIdAndUpdate(id, mongoOp, { new: true, strict: false });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ user: user.toSafeObject() });
+  } catch (err) {
+    console.error('Admin user PATCH error:', err);
+    return NextResponse.json({ error: err.message || 'Update failed' }, { status: 500 });
+  }
 }

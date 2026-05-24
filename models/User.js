@@ -49,12 +49,13 @@ const UserSchema = new mongoose.Schema(
     status:          { type: String, enum: ['active', 'suspended'], default: 'active' },
     walletAddresses:      { type: WalletAddressSchema, default: () => ({}) },
     walletBalances:       { type: WalletBalanceSchema,  default: () => ({}) },
-    pendingNotifications: [{
-      title: { type: String, required: true },
-      body:  { type: String, required: true },
-      type:  { type: String, default: 'account' },
-      _id:   false,
-    }],
+    pendingNotifications: {
+      type: [new mongoose.Schema(
+        { title: String, body: String, type: { type: String, default: 'account' } },
+        { _id: false }
+      )],
+      default: [],
+    },
   },
   { timestamps: true }
 );

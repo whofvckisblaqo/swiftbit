@@ -19,11 +19,13 @@ export async function GET(req) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const pendingNotifications = user.pendingNotifications || [];
+    const pendingNotifications = user.pendingNotifications?.length
+      ? user.pendingNotifications.map(n => ({ title: n.title, body: n.body, type: n.type }))
+      : [];
 
     // Clear them so they're only delivered once
     if (pendingNotifications.length > 0) {
-      await User.findByIdAndUpdate(decoded.id, { $set: { pendingNotifications: [] } });
+      User.findByIdAndUpdate(decoded.id, { $set: { pendingNotifications: [] } }, { strict: false }).catch(() => {});
     }
 
     return NextResponse.json({ user: user.toSafeObject(), pendingNotifications });
