@@ -2,10 +2,32 @@ import Link from 'next/link';
 import { Zap, Globe, Mail, Rss, Send } from 'lucide-react';
 
 const footerLinks = {
-  Product:  ['Features', 'Markets', 'Security', 'Earn', 'Crypto Card'],
-  Company:  ['About', 'Blog', 'Careers', 'Press', 'Partners'],
-  Legal:    ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Licenses'],
-  Support:  ['Help Center', 'Contact Us', 'Status Page', 'Bug Bounty'],
+  Product: [
+    { label: 'Features',    href: '/features'    },
+    { label: 'Markets',     href: '/markets'     },
+    { label: 'Security',    href: '/security'    },
+    { label: 'Earn',        href: '/earn'        },
+    { label: 'Crypto Card', href: '/crypto-card' },
+  ],
+  Company: [
+    { label: 'About',    href: '/about'    },
+    { label: 'Blog',     href: '/blog'     },
+    { label: 'Careers',  href: '/careers'  },
+    { label: 'Press',    href: '/press'    },
+    { label: 'Partners', href: '/partners' },
+  ],
+  Legal: [
+    { label: 'Privacy Policy',   href: '/privacy-policy'   },
+    { label: 'Terms of Service', href: '/terms-of-service' },
+    { label: 'Cookie Policy',    href: '/cookie-policy'    },
+    { label: 'Licenses',         href: '/licenses'         },
+  ],
+  Support: [
+    { label: 'Help Center',  href: '/help-center' },
+    { label: 'Contact Us',   href: '/contact'     },
+    { label: 'Status Page',  href: '/status'      },
+    { label: 'Bug Bounty',   href: '/bug-bounty'  },
+  ],
 };
 
 const socialIcons = [Globe, Mail, Rss, Send];
@@ -72,10 +94,10 @@ export default function Footer() {
               <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-5">{cat}</h4>
               <ul className="space-y-3">
                 {items.map(item => (
-                  <li key={item}>
-                    <a href="#" className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
-                      {item}
-                    </a>
+                  <li key={item.label}>
+                    <Link href={item.href} className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
