@@ -10,39 +10,45 @@ export async function PATCH(req, { params }) {
   const { id } = await params;
   const body = await req.json();
 
-  const update = {};
+  const setUpdate = {};
+  const incUpdate = {};
 
   // Scalar fields
-  if (body.status)    update.status    = body.status;
-  if (body.kycStatus) update.kycStatus = body.kycStatus;
-  if (body.kycLevel !== undefined) update.kycLevel = body.kycLevel;
+  if (body.status)    setUpdate.status    = body.status;
+  if (body.kycStatus) setUpdate.kycStatus = body.kycStatus;
+  if (body.kycLevel !== undefined) setUpdate.kycLevel = body.kycLevel;
 
   const COINS = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
-  // Wallet addresses — merge individual coin keys
+  // Wallet addresses — always set (replace)
   if (body.walletAddresses && typeof body.walletAddresses === 'object') {
     for (const coin of COINS) {
       if (body.walletAddresses[coin] !== undefined) {
-        update[`walletAddresses.${coin}`] = body.walletAddresses[coin];
+        setUpdate[`walletAddresses.${coin}`] = body.walletAddresses[coin];
       }
     }
   }
 
-  // Wallet balances — merge individual coin amounts
+  // Wallet balances — increment so repeated fundings stack
   if (body.walletBalances && typeof body.walletBalances === 'object') {
     for (const coin of COINS) {
-      if (body.walletBalances[coin] !== undefined) {
-        update[`walletBalances.${coin}`] = parseFloat(body.walletBalances[coin]) || 0;
+      const val = parseFloat(body.walletBalances[coin]);
+      if (!isNaN(val) && val !== 0) {
+        incUpdate[`walletBalances.${coin}`] = val;
       }
     }
   }
 
-  if (!Object.keys(update).length) {
+  if (!Object.keys(setUpdate).length && !Object.keys(incUpdate).length) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
+  const mongoOp = {};
+  if (Object.keys(setUpdate).length) mongoOp.$set = setUpdate;
+  if (Object.keys(incUpdate).length) mongoOp.$inc = incUpdate;
+
   await connectDB();
-  const user = await User.findByIdAndUpdate(id, { $set: update }, { new: true });
+  const user = await User.findByIdAndUpdate(id, mongoOp, { new: true });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   return NextResponse.json({ user: user.toSafeObject() });

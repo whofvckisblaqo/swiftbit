@@ -87,7 +87,7 @@ const COIN_LABELS = {
 
 function FundModal({ user, token, onClose, onSave }) {
   const [balances, setBalances] = useState(
-    Object.fromEntries(COINS.map(c => [c, user.walletBalances?.[c] ?? 0]))
+    Object.fromEntries(COINS.map(c => [c, '']))
   );
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -127,7 +127,7 @@ function FundModal({ user, token, onClose, onSave }) {
         </div>
 
         <p className="text-xs text-gray-600 mb-5 leading-relaxed">
-          Set the coin balance for this user. Values are stored in the database and reflected immediately on their dashboard.
+          Enter the amount to <span className="text-yellow-400 font-semibold">add</span> to each coin balance. Existing balances are shown on the right and will not be touched if you leave a field empty.
         </p>
 
         <div className="space-y-3">
@@ -143,9 +143,13 @@ function FundModal({ user, token, onClose, onSave }) {
                 min="0"
                 value={balances[coin]}
                 onChange={e => setBalances(prev => ({ ...prev, [coin]: e.target.value }))}
-                placeholder="0"
+                placeholder="amount to add"
                 className="flex-1 glass border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-gray-700 focus:outline-none focus:border-green-500/40 transition-all"
               />
+              <div className="w-20 text-right flex-shrink-0">
+                <div className="text-[10px] text-gray-600">Current</div>
+                <div className="text-xs font-mono text-gray-400">{(user.walletBalances?.[coin] ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}</div>
+              </div>
             </div>
           ))}
         </div>
