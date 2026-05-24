@@ -17,7 +17,7 @@ export async function PATCH(req, { params }) {
   if (body.kycStatus) update.kycStatus = body.kycStatus;
   if (body.kycLevel !== undefined) update.kycLevel = body.kycLevel;
 
-  const COINS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
+  const COINS = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
   // Wallet addresses — merge individual coin keys
   if (body.walletAddresses && typeof body.walletAddresses === 'object') {

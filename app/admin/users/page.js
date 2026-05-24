@@ -6,7 +6,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
 
-const COINS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
+const COINS = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
 function WalletModal({ user, token, onClose, onSave }) {
   const [addresses, setAddresses] = useState({ ...user.walletAddresses });
@@ -54,11 +54,11 @@ function WalletModal({ user, token, onClose, onSave }) {
         <div className="space-y-3">
           {COINS.map(coin => (
             <div key={coin}>
-              <label className="text-xs font-semibold text-gray-400 block mb-1.5">{coin} Address</label>
+              <label className="text-xs font-semibold text-gray-400 block mb-1.5">{COIN_LABELS[coin] || coin} Address</label>
               <input
                 value={addresses[coin] || ''}
                 onChange={e => setAddresses(prev => ({ ...prev, [coin]: e.target.value }))}
-                placeholder={`Enter ${coin} deposit address...`}
+                placeholder={`Enter ${COIN_LABELS[coin] || coin} deposit address...`}
                 className="w-full glass border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-gray-700 focus:outline-none focus:border-green-500/40 transition-all"
               />
             </div>
@@ -80,8 +80,9 @@ function WalletModal({ user, token, onClose, onSave }) {
 }
 
 const COIN_LABELS = {
-  BTC: 'Bitcoin', ETH: 'Ethereum', USDT: 'Tether', BNB: 'BNB',
-  SOL: 'Solana', XRP: 'XRP', DOGE: 'Dogecoin', ADA: 'Cardano',
+  BTC: 'Bitcoin', ETH: 'Ethereum',
+  USDT_TRC20: 'Tether · TRC20', USDT_ERC20: 'Tether · ERC20',
+  BNB: 'BNB', SOL: 'Solana', XRP: 'XRP', DOGE: 'Dogecoin', ADA: 'Cardano',
 };
 
 function FundModal({ user, token, onClose, onSave }) {

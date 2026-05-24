@@ -6,12 +6,18 @@ import { QRCodeSVG } from 'qrcode.react';
 import { cryptoAssets } from '@/lib/data';
 import { useAuth } from '@/store/useAppStore';
 
-const COIN_SYMBOLS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
+// Base coins from cryptoAssets, then inject USDT_TRC20 / USDT_ERC20 in place of USDT
+const usdtBase = { id: 'tether', symbol: 'USDT', name: 'Tether', icon: '₮', color: '#26a17b' };
+const RECEIVE_COINS = [
+  ...cryptoAssets.filter(c => !['tether'].includes(c.id) && ['bitcoin','ethereum','bnb','solana','ripple','dogecoin','cardano'].includes(c.id)),
+  { ...usdtBase, id: 'usdt-trc20', symbol: 'USDT_TRC20', name: 'USDT · TRC20 (Tron)' },
+  { ...usdtBase, id: 'usdt-erc20', symbol: 'USDT_ERC20', name: 'USDT · ERC20 (Ethereum)' },
+];
 
 function ReceiveContent() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const [selectedCoin, setSelectedCoin] = useState(cryptoAssets[0]);
+  const [selectedCoin, setSelectedCoin] = useState(RECEIVE_COINS[0]);
   const [showCoins, setShowCoins] = useState(false);
 
   const walletAddresses = user?.walletAddresses || {};
@@ -41,24 +47,26 @@ function ReceiveContent() {
             {selectedCoin.icon}
           </div>
           <div className="flex-1 text-left">
-            <div className="text-sm font-semibold text-white">{selectedCoin.symbol}</div>
-            <div className="text-xs text-gray-500">{selectedCoin.name} Network</div>
+            <div className="text-sm font-semibold text-white">{selectedCoin.name}</div>
+            <div className="text-xs text-gray-500">{selectedCoin.symbol}</div>
           </div>
           <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showCoins ? 'rotate-180' : ''}`} />
         </button>
 
         {showCoins && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-            className="mt-3 max-h-48 overflow-y-auto space-y-1">
-            {cryptoAssets.filter(c => COIN_SYMBOLS.includes(c.symbol)).map(c => (
+            className="mt-3 max-h-56 overflow-y-auto space-y-1">
+            {RECEIVE_COINS.map(c => (
               <button key={c.id} onClick={() => { setSelectedCoin(c); setShowCoins(false); }}
                 className={`w-full flex items-center gap-2 p-2.5 rounded-xl text-left transition-all ${c.id === selectedCoin.id ? 'bg-green-500/10' : 'hover:bg-white/5'}`}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                   style={{ background: `${c.color}20`, color: c.color }}>{c.icon}</div>
-                <span className="text-sm font-medium text-white">{c.symbol}</span>
-                <span className="text-xs text-gray-500">{c.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white">{c.name}</div>
+                  <div className="text-xs text-gray-600">{c.symbol}</div>
+                </div>
                 {walletAddresses[c.symbol] && (
-                  <span className="ml-auto text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Ready</span>
+                  <span className="text-[10px] text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full flex-shrink-0">Ready</span>
                 )}
               </button>
             ))}
@@ -85,13 +93,13 @@ function ReceiveContent() {
             </div>
 
             <div className="mb-1">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{selectedCoin.symbol} Address</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{selectedCoin.name} Address</span>
             </div>
             <div className="text-xs text-gray-400 font-mono break-all leading-relaxed px-2 mb-4">
               {address}
             </div>
             <div className="inline-flex items-center gap-1 text-xs text-yellow-400 bg-yellow-500/10 px-3 py-1.5 rounded-full">
-              ⚠ Only send {selectedCoin.symbol} to this address
+              ⚠ Only send {selectedCoin.symbol.replace('_', ' ')} to this address
             </div>
           </>
         ) : (
@@ -101,7 +109,7 @@ function ReceiveContent() {
             </div>
             <p className="text-sm font-semibold text-gray-400 mb-2">Address Not Assigned</p>
             <p className="text-xs text-gray-600 leading-relaxed max-w-xs mx-auto">
-              Your {selectedCoin.symbol} deposit address hasn't been assigned yet. Please contact support or check back later.
+              Your {selectedCoin.name} deposit address hasn't been assigned yet. Please contact support or check back later.
             </p>
           </div>
         )}

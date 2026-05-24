@@ -2,25 +2,27 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const WalletAddressSchema = new mongoose.Schema({
-  BTC:  { type: String, default: '' },
-  ETH:  { type: String, default: '' },
-  USDT: { type: String, default: '' },
-  BNB:  { type: String, default: '' },
-  SOL:  { type: String, default: '' },
-  XRP:  { type: String, default: '' },
-  DOGE: { type: String, default: '' },
-  ADA:  { type: String, default: '' },
+  BTC:       { type: String, default: '' },
+  ETH:       { type: String, default: '' },
+  USDT_TRC20:{ type: String, default: '' },
+  USDT_ERC20:{ type: String, default: '' },
+  BNB:       { type: String, default: '' },
+  SOL:       { type: String, default: '' },
+  XRP:       { type: String, default: '' },
+  DOGE:      { type: String, default: '' },
+  ADA:       { type: String, default: '' },
 }, { _id: false });
 
 const WalletBalanceSchema = new mongoose.Schema({
-  BTC:  { type: Number, default: 0 },
-  ETH:  { type: Number, default: 0 },
-  USDT: { type: Number, default: 0 },
-  BNB:  { type: Number, default: 0 },
-  SOL:  { type: Number, default: 0 },
-  XRP:  { type: Number, default: 0 },
-  DOGE: { type: Number, default: 0 },
-  ADA:  { type: Number, default: 0 },
+  BTC:       { type: Number, default: 0 },
+  ETH:       { type: Number, default: 0 },
+  USDT_TRC20:{ type: Number, default: 0 },
+  USDT_ERC20:{ type: Number, default: 0 },
+  BNB:       { type: Number, default: 0 },
+  SOL:       { type: Number, default: 0 },
+  XRP:       { type: Number, default: 0 },
+  DOGE:      { type: Number, default: 0 },
+  ADA:       { type: Number, default: 0 },
 }, { _id: false });
 
 const KycDataSchema = new mongoose.Schema({
