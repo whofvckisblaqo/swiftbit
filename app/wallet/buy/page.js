@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, CreditCard, Building2, Smartphone, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useWallet, useToast, useNotifs } from '@/store/useAppStore';
+import KycGate from '@/components/ui/KycGate';
 
 const payMethods = [
   { id: 'card',  label: 'Credit/Debit Card', icon: CreditCard,  fee: 1.5  },
@@ -10,7 +11,7 @@ const payMethods = [
   { id: 'apple', label: 'Apple Pay',           icon: Smartphone,  fee: 1.2  },
 ];
 
-export default function BuyPage() {
+function BuyContent() {
   const { assets, executeBuy } = useWallet();
   const { toast } = useToast();
   const { addNotification } = useNotifs();
@@ -195,5 +196,13 @@ export default function BuyPage() {
         )}
       </motion.button>
     </div>
+  );
+}
+
+export default function BuyPage() {
+  return (
+    <KycGate>
+      <BuyContent />
+    </KycGate>
   );
 }

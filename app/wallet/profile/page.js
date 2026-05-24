@@ -10,7 +10,7 @@ import { useAuth, useNotifs, useToast } from '@/store/useAppStore';
 
 const menuSections = [
   { section: 'Account', items: [
-    { icon: Shield,      label: 'KYC Verification', desc: 'Verified ✓',      color: '#22c55e' },
+    { icon: Shield,      label: 'KYC Verification', desc: null,               color: '#22c55e', href: '/wallet/kyc' },
     { icon: CreditCard,  label: 'Payment Methods',  desc: '3 cards linked',  color: '#6366f1' },
     { icon: BookUser,    label: 'Address Book',      desc: '12 saved',        color: '#f59e0b' },
   ]},
@@ -63,8 +63,12 @@ export default function ProfilePage() {
             <h2 className="text-lg font-bold text-white">{user?.name || 'Alex Johnson'}</h2>
             <p className="text-sm text-gray-500">{user?.email || 'alex@example.com'}</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">✓ Verified</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">★ VIP Level 2</span>
+              {user?.kycStatus === 'verified'
+                ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">✓ Verified</span>
+                : user?.kycStatus === 'pending'
+                  ? <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">⏳ KYC Pending</span>
+                  : <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-medium">⚠ Unverified</span>}
+              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">★ VIP Level {user?.vipLevel || 0}</span>
             </div>
           </div>
           <button className="glass border border-white/10 rounded-xl p-2 hover:border-white/20 transition-all">
@@ -107,27 +111,38 @@ export default function ProfilePage() {
       </motion.div>
 
       {/* KYC status */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-        className="glass rounded-2xl p-4 mb-5 border border-green-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-green-500/15 border border-green-500/25 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5 text-green-400" />
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-white">KYC Fully Verified</div>
-            <div className="text-xs text-gray-500">Member since {user?.joinedDate || 'Jan 12, 2024'}</div>
-          </div>
-          <span className="text-xs text-green-400 font-medium">Level {user?.kycLevel || 3}</span>
-        </div>
-        <div className="mt-3 flex gap-2">
-          {['Identity', 'Address', 'Face ID'].map(step => (
-            <div key={step} className="flex-1 text-center">
-              <div className="w-full h-1 rounded-full bg-green-400 mb-1" />
-              <span className="text-[10px] text-green-400">{step}</span>
+      {(() => {
+        const kycStatus = user?.kycStatus || 'unverified';
+        const isVerified = kycStatus === 'verified';
+        const isPending = kycStatus === 'pending';
+        const isRejected = kycStatus === 'rejected';
+        const kycColor = isVerified ? '#22c55e' : isPending ? '#f59e0b' : '#ef4444';
+        const kycLabel = isVerified ? 'KYC Fully Verified' : isPending ? 'Verification Pending' : isRejected ? 'Verification Rejected' : 'Identity Not Verified';
+        const kycDesc = isVerified ? `Member since ${user?.joinedDate || ''}` : isPending ? 'Under review · 1–2 business days' : isRejected ? 'Resubmit required' : 'Complete KYC to unlock transactions';
+        return (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+            className="glass rounded-2xl p-4 mb-5" style={{ borderColor: `${kycColor}30`, border: `1px solid ${kycColor}30` }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${kycColor}15`, border: `1px solid ${kycColor}25` }}>
+                <CheckCircle2 className="w-5 h-5" style={{ color: kycColor }} />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-white">{kycLabel}</div>
+                <div className="text-xs text-gray-500">{kycDesc}</div>
+              </div>
+              {!isVerified && (
+                <Link href="/wallet/kyc"
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+                  style={{ background: `${kycColor}15`, color: kycColor, border: `1px solid ${kycColor}30` }}>
+                  {isRejected ? 'Resubmit' : isPending ? 'View' : 'Verify'}
+                </Link>
+              )}
+              {isVerified && <span className="text-xs font-medium" style={{ color: kycColor }}>Level {user?.kycLevel || 1}</span>}
             </div>
-          ))}
-        </div>
-      </motion.div>
+          </motion.div>
+        );
+      })()}
 
       {/* Menu sections */}
       {menuSections.map((section, si) => (
@@ -136,20 +151,35 @@ export default function ProfilePage() {
           <div className="px-4 py-3 border-b border-white/5">
             <span className="text-xs font-semibold text-gray-600 uppercase tracking-widest">{section.section}</span>
           </div>
-          {section.items.map(item => (
-            <button key={item.label}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] transition-all border-b border-white/[0.03] last:border-0 text-left">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: `${item.color}15`, border: `1px solid ${item.color}25` }}>
-                <item.icon className="w-4 h-4" style={{ color: item.color }} />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-white">{item.label}</div>
-                {item.desc && <div className="text-xs text-gray-600">{item.desc}</div>}
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-700" />
-            </button>
-          ))}
+          {section.items.map(item => {
+            const desc = item.label === 'KYC Verification'
+              ? (user?.kycStatus === 'verified' ? 'Verified ✓' : user?.kycStatus === 'pending' ? 'Pending review' : user?.kycStatus === 'rejected' ? 'Rejected — resubmit' : 'Not verified')
+              : item.desc;
+            const inner = (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: `${item.color}15`, border: `1px solid ${item.color}25` }}>
+                  <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-white">{item.label}</div>
+                  {desc && <div className="text-xs text-gray-600">{desc}</div>}
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-700" />
+              </>
+            );
+            return item.href ? (
+              <Link key={item.label} href={item.href}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] transition-all border-b border-white/[0.03] last:border-0 text-left">
+                {inner}
+              </Link>
+            ) : (
+              <button key={item.label}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] transition-all border-b border-white/[0.03] last:border-0 text-left">
+                {inner}
+              </button>
+            );
+          })}
         </motion.div>
       ))}
 

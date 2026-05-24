@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpDown, ChevronDown, Info, CheckCircle2 } from 'lucide-react';
 import { useWallet, useToast, useNotifs } from '@/store/useAppStore';
+import KycGate from '@/components/ui/KycGate';
 
 function CoinSelect({ label, coins, selected, onSelect, amount, onAmount, readonly }) {
   const [open, setOpen] = useState(false);
@@ -57,7 +58,7 @@ function CoinSelect({ label, coins, selected, onSelect, amount, onAmount, readon
   );
 }
 
-export default function SwapPage() {
+function SwapContent() {
   const { assets, executeSwap } = useWallet();
   const { toast } = useToast();
   const { addNotification } = useNotifs();
@@ -223,5 +224,13 @@ export default function SwapPage() {
         )}
       </motion.button>
     </div>
+  );
+}
+
+export default function SwapPage() {
+  return (
+    <KycGate>
+      <SwapContent />
+    </KycGate>
   );
 }
