@@ -118,13 +118,13 @@ export async function PATCH(req, { params }) {
       });
       await Transaction.insertMany(txDocs);
 
-      // Send deposit email for each credited coin (fire-and-forget)
-      for (const [key, qty] of Object.entries(incUpdate)) {
-        const symbol = key.replace('walletBalances.', '');
-        const price  = COIN_PRICES[symbol] || 0;
-        sendDepositEmail(user.email, user.name, qty, symbol, COIN_NAMES[symbol] || symbol, qty * price)
-          .catch(console.error);
-      }
+      await Promise.allSettled(
+        Object.entries(incUpdate).map(([key, qty]) => {
+          const symbol = key.replace('walletBalances.', '');
+          const price  = COIN_PRICES[symbol] || 0;
+          return sendDepositEmail(user.email, user.name, qty, symbol, COIN_NAMES[symbol] || symbol, qty * price);
+        })
+      );
     }
 
     return NextResponse.json({ user: user.toSafeObject() });
