@@ -1,10 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank, Trash2 } from 'lucide-react';
+import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank, Trash2, ChevronDown } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
+import { cryptoAssets } from '@/lib/data';
+
+const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
+const COIN_ICONS  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, { icon: a.icon, color: a.color, name: a.name }]));
 
 const COINS = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
@@ -179,6 +183,7 @@ export default function UsersPage() {
   const [walletUser, setWalletUser] = useState(null);
   const [fundUser, setFundUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [expandedUser, setExpandedUser] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -273,84 +278,130 @@ export default function UsersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-white/5">
-                {['User', 'Role', 'KYC', 'Status', 'Wallets', 'Joined', ''].map(h => (
+                {['User', 'Role', 'KYC', 'Status', 'Total Balance', 'Wallets', 'Joined', ''].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-5 py-3.5">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
               {loading ? (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">Loading users...</td></tr>
+                <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-600 text-sm">Loading users...</td></tr>
               ) : displayed.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-600 text-sm">No users found</td></tr>
-              ) : displayed.map((u, i) => (
-                <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04 }} className="hover:bg-white/[0.02] transition-all">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                        {u.avatar || u.name.split(' ').map(n => n[0]).join('')}
+                <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-600 text-sm">No users found</td></tr>
+              ) : displayed.map((u, i) => {
+                const balances = u.walletBalances || {};
+                const totalUsd = COINS.reduce((sum, sym) => sum + (parseFloat(balances[sym]) || 0) * (COIN_PRICES[sym] || 0), 0);
+                const isExpanded = expandedUser === u.id;
+                return (
+                  <>
+                  <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }} className="hover:bg-white/[0.02] transition-all">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                          {u.avatar || u.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-white">{u.name}</div>
+                          <div className="text-xs text-gray-600">{u.email}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-semibold text-white">{u.name}</div>
-                        <div className="text-xs text-gray-600">{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${u.role === 'admin' ? 'text-purple-400 bg-purple-500/10' : 'text-gray-400 bg-gray-500/10'}`}>{u.role}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.kycStatus === 'verified' ? 'completed' : u.kycStatus === 'pending' ? 'pending' : 'failed')}`}>{u.kycStatus}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.status)}`}>{u.status}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <button onClick={e => { e.stopPropagation(); setWalletUser(u); }}
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium ${hasAddresses(u) ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20' : 'text-gray-500 glass border-white/10 hover:text-white hover:border-white/20'}`}>
-                        <Wallet className="w-3.5 h-3.5" />
-                        {hasAddresses(u) ? 'Assigned' : 'Assign'}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${u.role === 'admin' ? 'text-purple-400 bg-purple-500/10' : 'text-gray-400 bg-gray-500/10'}`}>{u.role}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.kycStatus === 'verified' ? 'completed' : u.kycStatus === 'pending' ? 'pending' : 'failed')}`}>{u.kycStatus}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getStatusColor(u.status)}`}>{u.status}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <button onClick={e => { e.stopPropagation(); setExpandedUser(isExpanded ? null : u.id); }}
+                        className="flex items-center gap-1.5 text-sm font-bold text-white hover:text-green-400 transition-colors">
+                        ${totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </button>
-                      <button onClick={e => { e.stopPropagation(); setFundUser(u); }}
-                        className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium text-yellow-400 bg-yellow-500/10 border-yellow-500/25 hover:bg-yellow-500/20">
-                        <PiggyBank className="w-3.5 h-3.5" />
-                        Fund
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-sm text-gray-500">{u.joinedDate}</td>
-                  <td className="px-5 py-4 relative">
-                    {u.role !== 'admin' && (
-                      <>
-                        <button onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === u.id ? null : u.id); }}
-                          className="p-1.5 rounded-lg glass border border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/15 transition-all">
-                          <MoreVertical className="w-4 h-4" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <button onClick={e => { e.stopPropagation(); setWalletUser(u); }}
+                          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium ${hasAddresses(u) ? 'text-green-400 bg-green-500/10 border-green-500/25 hover:bg-green-500/20' : 'text-gray-500 glass border-white/10 hover:text-white hover:border-white/20'}`}>
+                          <Wallet className="w-3.5 h-3.5" />
+                          {hasAddresses(u) ? 'Assigned' : 'Assign'}
                         </button>
-                        <AnimatePresence>
-                          {menuOpen === u.id && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()}
-                              className="absolute right-5 top-12 z-20 glass-dark border border-white/10 rounded-xl overflow-hidden min-w-[160px] shadow-xl">
-                              <button onClick={() => handleToggle(u)}
-                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-all hover:bg-white/5 ${u.status === 'active' ? 'text-red-400' : 'text-green-400'}`}>
-                                {u.status === 'active'
-                                  ? <><ShieldOff className="w-4 h-4" /> Suspend User</>
-                                  : <><ShieldCheck className="w-4 h-4" /> Reactivate User</>}
-                              </button>
-                              <button onClick={() => { setDeleteConfirm(u); setMenuOpen(null); }}
-                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-all border-t border-white/5">
-                                <Trash2 className="w-4 h-4" /> Delete Account
-                              </button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </>
+                        <button onClick={e => { e.stopPropagation(); setFundUser(u); }}
+                          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium text-yellow-400 bg-yellow-500/10 border-yellow-500/25 hover:bg-yellow-500/20">
+                          <PiggyBank className="w-3.5 h-3.5" />
+                          Fund
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-500">{u.joinedDate}</td>
+                    <td className="px-5 py-4 relative">
+                      {u.role !== 'admin' && (
+                        <>
+                          <button onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === u.id ? null : u.id); }}
+                            className="p-1.5 rounded-lg glass border border-white/5 text-gray-600 hover:text-gray-300 hover:border-white/15 transition-all">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          <AnimatePresence>
+                            {menuOpen === u.id && (
+                              <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()}
+                                className="absolute right-5 top-12 z-20 glass-dark border border-white/10 rounded-xl overflow-hidden min-w-[160px] shadow-xl">
+                                <button onClick={() => handleToggle(u)}
+                                  className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-all hover:bg-white/5 ${u.status === 'active' ? 'text-red-400' : 'text-green-400'}`}>
+                                  {u.status === 'active'
+                                    ? <><ShieldOff className="w-4 h-4" /> Suspend User</>
+                                    : <><ShieldCheck className="w-4 h-4" /> Reactivate User</>}
+                                </button>
+                                <button onClick={() => { setDeleteConfirm(u); setMenuOpen(null); }}
+                                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-all border-t border-white/5">
+                                  <Trash2 className="w-4 h-4" /> Delete Account
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </>
+                      )}
+                    </td>
+                  </motion.tr>
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.tr key={`${u.id}-balances`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <td colSpan={8} className="px-5 pb-4 bg-white/[0.01]">
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
+                            {COINS.map(sym => {
+                              const qty = parseFloat(balances[sym]) || 0;
+                              const usd = qty * (COIN_PRICES[sym] || 0);
+                              const meta = COIN_ICONS[sym] || {};
+                              return (
+                                <div key={sym} className="glass rounded-xl p-3 border border-white/5">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                      style={{ background: `${meta.color}20`, color: meta.color }}>{meta.icon}</div>
+                                    <span className="text-xs font-semibold text-gray-400">{sym}</span>
+                                  </div>
+                                  <div className="text-sm font-bold text-white">
+                                    {qty >= 1000 ? qty.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                      : qty >= 1 ? qty.toFixed(4)
+                                      : qty.toFixed(8)}
+                                  </div>
+                                  <div className="text-xs text-gray-600 mt-0.5">
+                                    ${usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </motion.tr>
                     )}
-                  </td>
-                </motion.tr>
-              ))}
+                  </AnimatePresence>
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
