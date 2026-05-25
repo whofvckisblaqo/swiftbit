@@ -135,12 +135,7 @@ const walletSlice = (set, get) => ({
 
 /* ─── Notification slice ─────────────────────────────── */
 const notifSlice = (set) => ({
-  notifications: [
-    { id: 'n1', title: 'BTC surged +8.2%', body: 'Bitcoin is up today. Your portfolio gained $2,840.', time: '2 min ago', read: false, type: 'market' },
-    { id: 'n2', title: 'Deposit confirmed', body: '$2,000 USDT deposit has been processed.', time: '1 hr ago', read: false, type: 'transaction' },
-    { id: 'n3', title: 'KYC Verified ✓', body: 'Your identity verification is complete. Level 3 access granted.', time: '1 day ago', read: true, type: 'account' },
-    { id: 'n4', title: 'Swap executed', body: '10 SOL → 1.84 ETH swap completed successfully.', time: '2 days ago', read: true, type: 'transaction' },
-  ],
+  notifications: [],
   unreadCount: 2,
 
   markAllRead: () => set(s => ({
