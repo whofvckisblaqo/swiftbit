@@ -110,6 +110,18 @@ const walletSlice = (set, get) => ({
     return tx;
   },
 
+  updatePrices: (prices) => set(s => {
+    const updatedAssets = s.assets.map(a => {
+      const p = prices[a.symbol];
+      if (!p) return a;
+      return { ...a, price: p.price, change24h: p.change24h, change7d: p.change7d, usdValue: a.balance * p.price };
+    });
+    return {
+      assets: updatedAssets,
+      totalBalance: updatedAssets.reduce((sum, a) => sum + a.usdValue, 0),
+    };
+  }),
+
   executeSend: async ({ coin, amount, address }) => {
     const usdValue = amount * coin.price;
     const tx = await postTx(get().token, {
@@ -232,7 +244,7 @@ export const useAppStore = create(
 
 /* ─── Convenience selectors ──────────────────────────── */
 export const useAuth       = () => useAppStore(useShallow(s => ({ user: s.user, token: s.token, isAuthenticated: s.isAuthenticated, setAuth: s.setAuth, logout: s.logout, updateUser: s.updateUser })));
-export const useWallet     = () => useAppStore(useShallow(s => ({ assets: s.assets, transactions: s.transactions, totalBalance: s.totalBalance, change24h: s.change24h, changePct24h: s.changePct24h, hideBalance: s.hideBalance, toggleHideBalance: s.toggleHideBalance, executeBuy: s.executeBuy, executeSwap: s.executeSwap, executeSend: s.executeSend })));
+export const useWallet     = () => useAppStore(useShallow(s => ({ assets: s.assets, transactions: s.transactions, totalBalance: s.totalBalance, change24h: s.change24h, changePct24h: s.changePct24h, hideBalance: s.hideBalance, toggleHideBalance: s.toggleHideBalance, executeBuy: s.executeBuy, executeSwap: s.executeSwap, executeSend: s.executeSend, updatePrices: s.updatePrices })));
 export const useNotifs     = () => useAppStore(useShallow(s => ({ notifications: s.notifications, unreadCount: s.unreadCount, markAllRead: s.markAllRead, markRead: s.markRead, addNotification: s.addNotification })));
 export const useToast      = () => useAppStore(useShallow(s => ({ toasts: s.toasts, toast: s.toast, removeToast: s.removeToast })));
 export const useAdminStore = () => useAppStore(useShallow(s => ({ kycQueue: s.kycQueue, withdrawalQueue: s.withdrawalQueue, users: s.users, approveKyc: s.approveKyc, rejectKyc: s.rejectKyc, approveWithdrawal: s.approveWithdrawal, rejectWithdrawal: s.rejectWithdrawal, toggleUserStatus: s.toggleUserStatus })));
