@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank } from 'lucide-react';
+import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank, Trash2 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
@@ -178,6 +178,7 @@ export default function UsersPage() {
   const [menuOpen, setMenuOpen] = useState(null);
   const [walletUser, setWalletUser] = useState(null);
   const [fundUser, setFundUser] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -202,6 +203,24 @@ export default function UsersPage() {
       setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: next } : x));
       toast({ message: `${u.name} has been ${next}`, type: next === 'active' ? 'success' : 'warning' });
     } catch { toast({ message: 'Action failed', type: 'error' }); }
+    setMenuOpen(null);
+  };
+
+  const handleDelete = async (u) => {
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setUsers(prev => prev.filter(x => x.id !== u.id));
+        toast({ message: `${u.name}'s account deleted`, type: 'success' });
+      } else {
+        const data = await res.json();
+        toast({ message: data.error || 'Delete failed', type: 'error' });
+      }
+    } catch { toast({ message: 'Delete failed', type: 'error' }); }
+    setDeleteConfirm(null);
     setMenuOpen(null);
   };
 
@@ -320,6 +339,10 @@ export default function UsersPage() {
                                   ? <><ShieldOff className="w-4 h-4" /> Suspend User</>
                                   : <><ShieldCheck className="w-4 h-4" /> Reactivate User</>}
                               </button>
+                              <button onClick={() => { setDeleteConfirm(u); setMenuOpen(null); }}
+                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-all border-t border-white/5">
+                                <Trash2 className="w-4 h-4" /> Delete Account
+                              </button>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -352,6 +375,37 @@ export default function UsersPage() {
             onClose={() => setFundUser(null)}
             onSave={(updated) => setUsers(prev => prev.map(u => u.id === updated.id ? { ...u, walletBalances: updated.walletBalances } : u))}
           />
+        )}
+        {deleteConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative z-10 w-full max-w-sm glass-dark rounded-2xl border border-red-500/20 p-6 shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Delete Account</h3>
+                  <p className="text-xs text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-400 mb-6">
+                Are you sure you want to permanently delete <span className="text-white font-semibold">{deleteConfirm.name}</span>'s account? All their transactions will also be removed.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-2.5 rounded-xl glass border border-white/10 text-sm text-gray-400 hover:text-white transition-all">
+                  Cancel
+                </button>
+                <button onClick={() => handleDelete(deleteConfirm)}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-sm font-semibold text-red-400 hover:bg-red-500/30 transition-all flex items-center justify-center gap-2">
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

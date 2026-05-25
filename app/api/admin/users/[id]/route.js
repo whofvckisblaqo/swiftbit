@@ -9,6 +9,25 @@ import { sendDepositEmail, sendKycStatusEmail } from '@/lib/mailer';
 const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
 const COIN_NAMES  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.name]));
 
+export async function DELETE(req, { params }) {
+  const admin = requireAdmin(req);
+  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { id } = await params;
+  await connectDB();
+
+  const user = await User.findById(id);
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (user.role === 'admin') return NextResponse.json({ error: 'Cannot delete admin accounts' }, { status: 403 });
+
+  await Promise.all([
+    User.findByIdAndDelete(id),
+    Transaction.deleteMany({ userId: id }),
+  ]);
+
+  return NextResponse.json({ success: true });
+}
+
 export async function PATCH(req, { params }) {
   const admin = requireAdmin(req);
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
