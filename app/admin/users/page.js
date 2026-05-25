@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank, Trash2, ChevronDown } from 'lucide-react';
+import { Search, MoreVertical, ShieldOff, ShieldCheck, RefreshCw, Wallet, X, Save, PiggyBank, Trash2, ChevronDown, MinusCircle } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
@@ -172,6 +172,106 @@ function FundModal({ user, token, onClose, onSave }) {
   );
 }
 
+function DeductModal({ user, token, onClose, onSave }) {
+  const [amounts, setAmounts] = useState(Object.fromEntries(COINS.map(c => [c, ''])));
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    // Validate no deduction exceeds current balance
+    for (const coin of COINS) {
+      const val = parseFloat(amounts[coin]);
+      if (!val) continue;
+      const current = parseFloat(user.walletBalances?.[coin]) || 0;
+      if (val > current) {
+        toast({ message: `Cannot deduct more than current ${coin} balance (${current})`, type: 'error' });
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const negated = Object.fromEntries(
+        COINS.map(c => [c, amounts[c] ? -Math.abs(parseFloat(amounts[c])) : ''])
+      );
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ walletBalances: negated }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast({ message: `Balance deducted for ${user.name}`, type: 'success' });
+      onSave(data.user);
+      onClose();
+    } catch (e) {
+      toast({ message: e.message || 'Deduct failed', type: 'error' });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative z-10 w-full max-w-lg glass-dark rounded-2xl border border-red-500/20 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-base font-bold text-white">Deduct Balance</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{user.name} · {user.email}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl glass border border-white/10 text-gray-500 hover:text-white transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-600 mb-5 leading-relaxed">
+          Enter the amount to <span className="text-red-400 font-semibold">remove</span> from each coin balance. Cannot exceed the current balance.
+        </p>
+
+        <div className="space-y-3">
+          {COINS.map(coin => {
+            const current = parseFloat(user.walletBalances?.[coin]) || 0;
+            const val = parseFloat(amounts[coin]) || 0;
+            const exceeds = val > current;
+            return (
+              <div key={coin} className="flex items-center gap-3">
+                <div className="w-24 flex-shrink-0">
+                  <div className="text-xs font-bold text-white">{coin}</div>
+                  <div className="text-[10px] text-gray-600">{COIN_LABELS[coin]}</div>
+                </div>
+                <input
+                  type="number" step="any" min="0"
+                  value={amounts[coin]}
+                  onChange={e => setAmounts(prev => ({ ...prev, [coin]: e.target.value }))}
+                  placeholder="amount to deduct"
+                  className={`flex-1 glass border rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-gray-700 focus:outline-none transition-all ${exceeds ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-red-500/40'}`}
+                />
+                <div className="w-20 text-right flex-shrink-0">
+                  <div className="text-[10px] text-gray-600">Current</div>
+                  <div className={`text-xs font-mono ${exceeds ? 'text-red-400' : 'text-gray-400'}`}>
+                    {current.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl glass border border-white/10 text-sm text-gray-400 hover:text-white transition-all">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-3 rounded-xl bg-red-500/20 border border-red-500/30 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-red-500/30 transition-all">
+            {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving…</> : <><MinusCircle className="w-4 h-4" /> Deduct Balance</>}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const { token } = useAuth();
   const { toast } = useToast();
@@ -184,6 +284,7 @@ export default function UsersPage() {
   const [fundUser, setFundUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [expandedUser, setExpandedUser] = useState(null);
+  const [deductUser, setDeductUser] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -335,6 +436,11 @@ export default function UsersPage() {
                           <PiggyBank className="w-3.5 h-3.5" />
                           Fund
                         </button>
+                        <button onClick={e => { e.stopPropagation(); setDeductUser(u); }}
+                          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all font-medium text-red-400 bg-red-500/10 border-red-500/25 hover:bg-red-500/20">
+                          <MinusCircle className="w-3.5 h-3.5" />
+                          Deduct
+                        </button>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-sm text-gray-500">{u.joinedDate}</td>
@@ -424,6 +530,14 @@ export default function UsersPage() {
             user={fundUser}
             token={token}
             onClose={() => setFundUser(null)}
+            onSave={(updated) => setUsers(prev => prev.map(u => u.id === updated.id ? { ...u, walletBalances: updated.walletBalances } : u))}
+          />
+        )}
+        {deductUser && (
+          <DeductModal
+            user={deductUser}
+            token={token}
+            onClose={() => setDeductUser(null)}
             onSave={(updated) => setUsers(prev => prev.map(u => u.id === updated.id ? { ...u, walletBalances: updated.walletBalances } : u))}
           />
         )}
