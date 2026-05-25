@@ -335,10 +335,9 @@ export default function AssetPage({ params }) {
       <div className="fixed bottom-20 inset-x-0 px-4 max-w-lg mx-auto left-0 right-0">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="grid grid-cols-2 gap-3">
-          <motion.button whileHover={{ scale: coin.balance > 0 ? 1.02 : 1 }} whileTap={{ scale: coin.balance > 0 ? 0.97 : 1 }}
-            onClick={() => coin.balance > 0 && setSheet('send')}
-            disabled={coin.balance <= 0}
-            className="flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 glass text-white font-semibold text-sm hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            onClick={() => setSheet('send')}
+            className="flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 glass text-white font-semibold text-sm hover:border-white/20 transition-all">
             <Send className="w-4 h-4 text-green-400" /> Send
           </motion.button>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
