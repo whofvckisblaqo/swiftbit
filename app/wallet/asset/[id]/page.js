@@ -47,10 +47,11 @@ function SendSheet({ coin, onClose }) {
   const ethBalance     = assets.find(a => a.symbol === 'ETH')?.balance        || 0;
   const usdtErc20Bal   = assets.find(a => a.symbol === 'USDT_ERC20')?.balance || 0;
   const needsEthGas    = coin.symbol === 'USDT_ERC20' && usdtErc20Bal > 100000 && ethBalance < 0.5;
+  const insufficientBalance = amount !== '' && parseFloat(amount) > coin.balance;
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!amount || !address) return;
+    if (!amount || !address || insufficientBalance) return;
     setLoading(true);
     try {
       const tx = await executeSend({ coin, amount: parseFloat(amount), address });
@@ -121,10 +122,16 @@ function SendSheet({ coin, onClose }) {
               placeholder="0.00"
               className="w-full glass border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-green-500/40 transition-all"
               required />
-            {amount && <p className="text-xs text-gray-600 mt-1">≈ ${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
+            {amount && !insufficientBalance && <p className="text-xs text-gray-600 mt-1">≈ ${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>}
+            {insufficientBalance && (
+              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                Insufficient balance. Available: {coin.balance.toFixed(6)} {coin.symbol}
+              </p>
+            )}
           </div>
           <p className="text-xs text-gray-600">Network fee: ~$0.25 · Est. arrival: &lt;1 min</p>
-          <motion.button type="submit" disabled={loading || needsEthGas} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+          <motion.button type="submit" disabled={loading || needsEthGas || insufficientBalance} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
             {loading
               ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
@@ -328,9 +335,10 @@ export default function AssetPage({ params }) {
       <div className="fixed bottom-20 inset-x-0 px-4 max-w-lg mx-auto left-0 right-0">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="grid grid-cols-2 gap-3">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            onClick={() => setSheet('send')}
-            className="flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 glass text-white font-semibold text-sm hover:border-white/20 transition-all">
+          <motion.button whileHover={{ scale: coin.balance > 0 ? 1.02 : 1 }} whileTap={{ scale: coin.balance > 0 ? 0.97 : 1 }}
+            onClick={() => coin.balance > 0 && setSheet('send')}
+            disabled={coin.balance <= 0}
+            className="flex items-center justify-center gap-2 py-4 rounded-2xl border border-white/10 glass text-white font-semibold text-sm hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
             <Send className="w-4 h-4 text-green-400" /> Send
           </motion.button>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
