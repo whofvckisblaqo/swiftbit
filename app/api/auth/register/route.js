@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
-import { signToken } from '@/lib/jwt';
-import { sendWelcomeEmail } from '@/lib/mailer';
+import { sendOtpEmail } from '@/lib/mailer';
 
 export async function POST(req) {
   try {
@@ -23,15 +22,16 @@ export async function POST(req) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
     }
 
-    const user = await User.create({ name, email, password });
-    const token = signToken({ id: user._id, email: user.email, role: user.role });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-    sendWelcomeEmail(user.email, user.name);
+    const user = await User.create({ name, email, password, emailVerificationOtp: otp, emailVerificationOtpExpiry: otpExpiry });
 
-    return NextResponse.json({ token, user: user.toSafeObject() }, { status: 201 });
+    sendOtpEmail(user.email, otp);
+
+    return NextResponse.json({ requiresVerification: true, email: user.email }, { status: 201 });
   } catch (err) {
     console.error('[register]', err);
-    // Return actual error temporarily for debugging
     return NextResponse.json({ error: err.message || 'Registration failed' }, { status: 500 });
   }
 }

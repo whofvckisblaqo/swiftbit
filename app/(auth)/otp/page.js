@@ -4,11 +4,15 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap, Shield, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/store/useAppStore';
 
 function OTPForm() {
   const router = useRouter();
   const params = useSearchParams();
   const email  = params.get('email') || '';
+  const mode   = params.get('mode') || 'reset';
+  const isVerify = mode === 'verify';
+  const { setAuth } = useAuth();
 
   const [otp,     setOtp]     = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -39,14 +43,26 @@ function OTPForm() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: otp.join('') }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Invalid code'); setLoading(false); return; }
-      router.push(`/reset-password?token=${encodeURIComponent(data.resetToken)}`);
+      if (isVerify) {
+        const res = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp: otp.join('') }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error || 'Invalid code'); setLoading(false); return; }
+        setAuth(data.user, data.token);
+        router.push('/wallet');
+      } else {
+        const res = await fetch('/api/auth/verify-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp: otp.join('') }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.error || 'Invalid code'); setLoading(false); return; }
+        router.push(`/reset-password?token=${encodeURIComponent(data.resetToken)}`);
+      }
     } catch {
       setError('Network error. Please try again.');
       setLoading(false);
@@ -56,11 +72,19 @@ function OTPForm() {
   async function handleResend() {
     if (!email) return;
     setResent(true);
-    await fetch('/api/auth/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+    if (isVerify) {
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } else {
+      await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    }
     setTimeout(() => setResent(false), 4000);
   }
 
@@ -88,7 +112,9 @@ function OTPForm() {
               className="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4 glow-green-sm">
               <Shield className="w-8 h-8 text-green-400" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-white mb-2">Enter reset code</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              {isVerify ? 'Verify your email' : 'Enter reset code'}
+            </h1>
             <p className="text-gray-500 text-sm">
               {email ? <>Code sent to <span className="text-white">{email}</span></> : 'Enter the 6-digit code from your email'}
             </p>
@@ -122,7 +148,7 @@ function OTPForm() {
               {loading
                 ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                     className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
-                : <> Verify Code <ArrowRight className="w-4 h-4" /></>}
+                : <> {isVerify ? 'Verify Email' : 'Verify Code'} <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
           </form>
 
@@ -138,9 +164,15 @@ function OTPForm() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center mt-6">
-          <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
-            ← Use a different email
-          </Link>
+          {isVerify ? (
+            <Link href="/register" className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
+              ← Back to sign up
+            </Link>
+          ) : (
+            <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-gray-300 transition-colors">
+              ← Use a different email
+            </Link>
+          )}
         </motion.div>
       </div>
     </div>

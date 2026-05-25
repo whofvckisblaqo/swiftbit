@@ -44,6 +44,10 @@ export default function RegisterPage() {
         return;
       }
 
+      if (data.requiresVerification) {
+        router.push(`/otp?email=${encodeURIComponent(data.email)}&mode=verify`);
+        return;
+      }
       setAuth(data.user, data.token);
       router.push('/wallet');
     } catch {
