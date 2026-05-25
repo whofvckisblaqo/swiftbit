@@ -32,7 +32,7 @@ const pressReleases = [
 
 const coverage = [
   { outlet: 'Forbes',       title: 'The Crypto Platform Doing Banking Better', year: '2024' },
-  { outlet: 'Bloomberg',    title: 'SwiftBit Is What Crypto Banking Should Look Like', year: '2024' },
+  { outlet: 'Bloomberg',    title: 'SwiftBit Is What crypto exchange Should Look Like', year: '2024' },
   { outlet: 'TechCrunch',   title: 'SwiftBit Raises $45M to Take on Coinbase', year: '2024' },
   { outlet: 'The Block',    title: 'SwiftBit Leads MiCA Compliance Charge in Europe', year: '2024' },
   { outlet: 'CoinDesk',     title: 'Why SwiftBit Could Be the Next Crypto Unicorn', year: '2023' },

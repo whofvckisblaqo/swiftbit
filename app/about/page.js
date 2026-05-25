@@ -38,7 +38,7 @@ export default function AboutPage() {
         <div className="container relative z-10 text-center max-w-3xl mx-auto">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-400 mb-4">About SwiftBit</p>
           <h1 className="text-4xl sm:text-6xl font-black text-white mb-6 leading-tight">
-            Reimagining <span className="text-green-400">crypto banking</span> for everyone
+            Reimagining <span className="text-green-400">crypto exchange</span> for everyone
           </h1>
           <p className="text-gray-400 text-lg">
             SwiftBit was founded with a simple mission: make professional crypto finance accessible to anyone, anywhere.

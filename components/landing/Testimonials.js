@@ -70,7 +70,7 @@ export default function Testimonials() {
             Trusted by <span className="gradient-text">248,000+</span> traders
           </h2>
           <p className="text-lg text-gray-500">
-            Join the fastest-growing crypto banking community worldwide.
+            Join the fastest-growing crypto exchange community worldwide.
           </p>
         </motion.div>
 

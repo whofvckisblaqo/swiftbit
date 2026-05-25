@@ -186,7 +186,7 @@ export default function Hero() {
             >
               Secure. Fast.
               <br />
-              <span className="shimmer-text">Crypto Banking</span>
+              <span className="shimmer-text">crypto exchange</span>
               <br />
               Reimagined.
             </motion.h1>

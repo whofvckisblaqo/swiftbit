@@ -73,7 +73,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-[220px]">
-              The premium crypto banking platform. Secure. Fast. Reimagined.
+              The premium crypto exchange platform. Secure. Fast. Reimagined.
             </p>
             <div className="flex gap-2.5">
               {socialIcons.map((Icon, i) => (
