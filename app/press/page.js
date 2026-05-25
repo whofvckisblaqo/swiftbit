@@ -119,8 +119,8 @@ export default function PressPage() {
           <div className="glass border border-white/5 rounded-[var(--radius-card)] p-8 text-center">
             <h2 className="text-xl font-black text-white mb-3">Media enquiries</h2>
             <p className="text-gray-500 text-sm mb-4">For interview requests, press credentials, and further information:</p>
-            <a href="mailto:swiftbitsupport@outlook.com" className="text-green-400 font-bold hover:text-green-300 transition-colors">
-              swiftbitsupport@outlook.com
+            <a href="mailto:swiftbitsuport@outlook.com" className="text-green-400 font-bold hover:text-green-300 transition-colors">
+              swiftbitsuport@outlook.com
             </a>
           </div>
         </div>

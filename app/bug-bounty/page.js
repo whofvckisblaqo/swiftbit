@@ -82,7 +82,7 @@ export default function BugBountyPage() {
           <p className="text-gray-400 text-lg mb-8">
             Help us protect 248,000+ users. Earn up to <span className="text-white font-bold">$50,000</span> for critical vulnerabilities.
           </p>
-          <a href="mailto:swiftbitsupport@outlook.com"
+          <a href="mailto:swiftbitsuport@outlook.com"
             className="btn-neon inline-flex items-center gap-2 text-white font-bold px-10 py-4 rounded-2xl text-base">
             Report a Vulnerability <ArrowRight className="w-4 h-4" />
           </a>
@@ -176,7 +176,7 @@ export default function BugBountyPage() {
               <li>• Do not disclose the vulnerability publicly before we have released a fix.</li>
               <li>• Give us at least <strong className="text-white">90 days</strong> to patch before public disclosure.</li>
               <li>• Only test against accounts you own or have explicit permission to test.</li>
-              <li>• Report all findings to <a href="mailto:swiftbitsupport@outlook.com" className="text-green-400 hover:text-green-300">swiftbitsupport@outlook.com</a> with full reproduction steps.</li>
+              <li>• Report all findings to <a href="mailto:swiftbitsuport@outlook.com" className="text-green-400 hover:text-green-300">swiftbitsuport@outlook.com</a> with full reproduction steps.</li>
             </ul>
             <p className="text-gray-600 text-xs mt-6">
               Researchers who follow our responsible disclosure policy will not face legal action. SwiftBit reserves the right to determine reward amounts based on impact and quality of report.

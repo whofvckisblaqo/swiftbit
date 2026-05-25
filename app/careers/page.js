@@ -95,7 +95,7 @@ export default function CareersPage() {
 
           <p className="text-center text-gray-600 text-sm mt-8">
             Don't see your role?{' '}
-            <a href="mailto:swiftbitsupport@outlook.com" className="text-green-400 hover:text-green-300 underline">
+            <a href="mailto:swiftbitsuport@outlook.com" className="text-green-400 hover:text-green-300 underline">
               Send us your CV
             </a>{' '}
             and we'll keep you in mind for future openings.

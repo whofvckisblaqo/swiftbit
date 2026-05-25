@@ -141,7 +141,7 @@ export default function StatusPage() {
           </div>
           <p className="text-center text-gray-600 text-xs mt-6">
             Subscribe to status updates at{' '}
-            <a href="mailto:swiftbitsupport@outlook.com" className="text-gray-500 hover:text-gray-300 underline">swiftbitsupport@outlook.com</a>
+            <a href="mailto:swiftbitsuport@outlook.com" className="text-gray-500 hover:text-gray-300 underline">swiftbitsuport@outlook.com</a>
           </p>
         </div>
       </section>

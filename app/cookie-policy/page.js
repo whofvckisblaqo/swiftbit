@@ -93,7 +93,7 @@ export default function CookiePolicyPage() {
             <h2 className="text-white font-bold text-lg mb-4">Contact</h2>
             <p className="text-gray-400 text-sm leading-relaxed">
               For cookie-related enquiries, contact us at{' '}
-              <a href="mailto:swiftbitsupport@outlook.com" className="text-green-400 hover:text-green-300">swiftbitsupport@outlook.com</a>.
+              <a href="mailto:swiftbitsuport@outlook.com" className="text-green-400 hover:text-green-300">swiftbitsuport@outlook.com</a>.
             </p>
           </div>
 

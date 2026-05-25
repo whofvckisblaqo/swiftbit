@@ -49,7 +49,7 @@ We also collect information automatically, including IP addresses, device identi
 • Right to restrict processing — limit how we process your data
 • Right to object — object to processing based on legitimate interests
 
-To exercise any of these rights, contact us at swiftbitsupport@outlook.com.`,
+To exercise any of these rights, contact us at swiftbitsuport@outlook.com.`,
   },
   {
     title: '6. Security',
@@ -67,7 +67,7 @@ To exercise any of these rights, contact us at swiftbitsupport@outlook.com.`,
     title: '9. Contact',
     content: `For privacy-related enquiries, contact our Data Protection Officer at:
 
-Email: swiftbitsupport@outlook.com
+Email: swiftbitsuport@outlook.com
 Address: SwiftBit Technologies Ltd, 15 Finsbury Square, London EC2A 1BT, United Kingdom`,
   },
 ];
