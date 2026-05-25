@@ -12,7 +12,7 @@ export async function POST(req) {
     }
 
     await connectDB();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+emailVerificationOtp +emailVerificationOtpExpiry');
     if (!user) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
     }

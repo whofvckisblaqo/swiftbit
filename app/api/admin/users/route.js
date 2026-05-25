@@ -19,7 +19,7 @@ export async function GET(req) {
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await connectDB();
-  const users = await User.find({}).sort({ createdAt: -1 }).lean();
+  const users = await User.find({ $or: [{ emailVerified: true }, { role: 'admin' }] }).sort({ createdAt: -1 }).lean();
 
   return NextResponse.json({
     users: users.map(u => ({
