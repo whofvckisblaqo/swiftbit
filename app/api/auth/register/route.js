@@ -27,7 +27,7 @@ export async function POST(req) {
 
     const user = await User.create({ name, email, password, emailVerificationOtp: otp, emailVerificationOtpExpiry: otpExpiry });
 
-    sendEmailVerificationEmail(user.email, user.name, otp);
+    await sendEmailVerificationEmail(user.email, user.name, otp);
 
     return NextResponse.json({ requiresVerification: true, email: user.email }, { status: 201 });
   } catch (err) {

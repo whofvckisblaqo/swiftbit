@@ -19,7 +19,7 @@ export async function POST(req) {
       $set: { emailVerificationOtp: otp, emailVerificationOtpExpiry: otpExpiry },
     });
 
-    sendEmailVerificationEmail(user.email, user.name, otp);
+    await sendEmailVerificationEmail(user.email, user.name, otp);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[resend-verification]', err);
