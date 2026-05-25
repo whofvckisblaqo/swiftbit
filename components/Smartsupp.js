@@ -5,6 +5,7 @@ export default function Smartsupp() {
   useEffect(() => {
     window._smartsupp = window._smartsupp || {};
     window._smartsupp.key = '6344c78da45213b07d5767dd645eae013b91595a';
+    window._smartsupp.offsetY = 72;
 
     window.smartsupp = window.smartsupp || function () {
       window.smartsupp._.push(arguments);
