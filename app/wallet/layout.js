@@ -10,15 +10,22 @@ function UserSyncer() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => {
-        if (data.user) updateUser(data.user);
-        if (data.pendingNotifications?.length) {
-          data.pendingNotifications.forEach(n => addNotification(n));
-        }
-      })
-      .catch(() => {});
+
+    const sync = () => {
+      fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.user) updateUser(data.user);
+          if (data.pendingNotifications?.length) {
+            data.pendingNotifications.forEach(n => addNotification(n));
+          }
+        })
+        .catch(() => {});
+    };
+
+    sync();
+    const interval = setInterval(sync, 30000);
+    return () => clearInterval(interval);
   }, [token]);
 
   return null;
