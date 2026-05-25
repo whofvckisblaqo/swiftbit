@@ -72,8 +72,8 @@ export async function PATCH(req, { params }) {
     const user = await User.findByIdAndUpdate(id, mongoOp, { new: true, strict: false });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    // Notify user of KYC decision
-    if (body.kycStatus === 'verified' || body.kycStatus === 'rejected') {
+    // Notify user of KYC decision or reset
+    if (body.kycStatus === 'verified' || body.kycStatus === 'rejected' || body.kycStatus === 'unverified') {
       sendKycStatusEmail(user.email, user.name, body.kycStatus).catch(console.error);
     }
 

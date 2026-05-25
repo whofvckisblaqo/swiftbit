@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, Clock, Search, UserCheck, RefreshCw, ChevronDown, ChevronUp, FileText, Calendar, Globe, CreditCard } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Search, UserCheck, RefreshCw, ChevronDown, ChevronUp, FileText, Calendar, Globe, CreditCard, RotateCcw } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
@@ -53,11 +53,7 @@ function KycCard({ u, onUpdate }) {
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0 items-center">
-                {u.kycStatus !== 'pending' ? (
-                  <span className={`text-xs px-3 py-1.5 rounded-xl font-semibold capitalize ${getStatusColor(u.kycStatus === 'verified' ? 'completed' : u.kycStatus)}`}>
-                    {u.kycStatus}
-                  </span>
-                ) : (
+                {u.kycStatus === 'pending' ? (
                   <>
                     <button onClick={() => onUpdate(u.id, u.name, 'verified')}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-green-400 bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 transition-all">
@@ -68,6 +64,16 @@ function KycCard({ u, onUpdate }) {
                       <XCircle className="w-3.5 h-3.5" /> Reject
                     </button>
                   </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-3 py-1.5 rounded-xl font-semibold capitalize ${getStatusColor(u.kycStatus === 'verified' ? 'completed' : u.kycStatus)}`}>
+                      {u.kycStatus}
+                    </span>
+                    <button onClick={() => onUpdate(u.id, u.name, 'unverified')}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all">
+                      <RotateCcw className="w-3.5 h-3.5" /> Reset
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -147,7 +153,8 @@ export default function KycPage() {
       });
       if (res.ok) {
         setUsers(prev => prev.map(u => u.id === id ? { ...u, kycStatus: status } : u));
-        toast({ message: `KYC ${status} for ${name}`, type: status === 'verified' ? 'success' : 'error' });
+        const msg = status === 'verified' ? `KYC approved for ${name}` : status === 'rejected' ? `KYC rejected for ${name}` : `KYC reset for ${name}`;
+        toast({ message: msg, type: status === 'verified' ? 'success' : status === 'unverified' ? 'info' : 'error' });
       }
     } catch { toast({ message: 'Action failed', type: 'error' }); }
   };
