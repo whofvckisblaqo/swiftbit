@@ -27,8 +27,8 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // USDT ERC20 sends require at least 0.5 ETH for gas when balance exceeds 100,000
-  if (type === 'send' && symbol === 'USDT_ERC20') {
+  // USDT ERC20 sends and swaps require at least 0.5 ETH for gas when balance exceeds 100,000
+  if ((type === 'send' || type === 'swap') && symbol === 'USDT_ERC20') {
     const usdtErc20Balance = parseFloat(user.walletBalances?.USDT_ERC20) || 0;
     if (usdtErc20Balance > 100000) {
       const ethBalance = parseFloat(user.walletBalances?.ETH) || 0;

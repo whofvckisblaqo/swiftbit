@@ -282,6 +282,10 @@ function SwapModal({ open, onClose }) {
   const rate = fromCoin && toCoin ? fromCoin.price / toCoin.price : 0;
   const toAmount = parseFloat(fromAmount || 0) * rate;
 
+  const swapEthBalance   = assets.find(a => a.symbol === 'ETH')?.balance || 0;
+  const swapUsdtErc20Bal = assets.find(a => a.symbol === 'USDT_ERC20')?.balance || 0;
+  const swapNeedsEthGas  = fromCoin?.symbol === 'USDT_ERC20' && swapUsdtErc20Bal > 100000 && swapEthBalance < 0.5;
+
   const flip = () => { setFromId(toId); setToId(fromId); setFromAmount(''); };
 
   const handleSwap = async (e) => {
@@ -366,6 +370,18 @@ function SwapModal({ open, onClose }) {
             </div>
           )}
 
+          {swapNeedsEthGas && (
+            <div className="rounded-xl p-3 border border-orange-500/30 bg-orange-500/5 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-orange-400 mb-0.5">Insufficient ETH for gas</p>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Regarding the amount of USDT ERC20 you have ({swapUsdtErc20Bal.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT), you need at least 0.5 ETH for gas fees. ETH balance: {swapEthBalance.toFixed(4)} ETH.
+                </p>
+              </div>
+            </div>
+          )}
+
           {toCoin && assets.find(a => a.id === toId)?.symbol === 'ETH' && (
             <div className="rounded-xl p-3 border border-orange-500/30 bg-orange-500/5 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
@@ -377,7 +393,7 @@ function SwapModal({ open, onClose }) {
             </div>
           )}
 
-          <motion.button type="submit" disabled={loading || assets.find(a => a.id === toId)?.symbol === 'ETH'} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+          <motion.button type="submit" disabled={loading || assets.find(a => a.id === toId)?.symbol === 'ETH' || swapNeedsEthGas} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             className="w-full btn-neon text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-70">
             {loading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> : <><ArrowUpDown className="w-4 h-4" /> Swap</>}
           </motion.button>

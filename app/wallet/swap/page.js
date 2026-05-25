@@ -74,6 +74,10 @@ function SwapContent() {
   const toAmount = fromAmount ? (parseFloat(fromAmount) * rate).toFixed(6) : '';
   const fee = fromAmount ? (parseFloat(fromAmount) * (fromCoin?.price ?? 0) * 0.001).toFixed(4) : '0.00';
 
+  const ethBalance     = assets.find(a => a.symbol === 'ETH')?.balance || 0;
+  const usdtErc20Bal   = assets.find(a => a.symbol === 'USDT_ERC20')?.balance || 0;
+  const needsEthGas    = fromCoin?.symbol === 'USDT_ERC20' && usdtErc20Bal > 100000 && ethBalance < 0.5;
+
   const flip = () => {
     const tmp = fromCoin;
     setFromCoin(toCoin);
@@ -218,6 +222,21 @@ function SwapContent() {
         )}
       </AnimatePresence>
 
+      {needsEthGas && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl p-4 mb-4 border border-orange-500/30 bg-orange-500/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-orange-400 mb-1">Insufficient ETH for gas</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Regarding the amount of USDT ERC20 you have (<span className="text-white font-semibold">{usdtErc20Bal.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>), you need to have at least <span className="text-white font-semibold">0.5 ETH</span> in your wallet to cover network gas fees. Your current ETH balance: <span className="text-white font-semibold">{ethBalance.toFixed(4)} ETH</span>.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {toCoin?.symbol === 'ETH' && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-4 mb-4 border border-orange-500/30 bg-orange-500/5">
@@ -239,7 +258,7 @@ function SwapContent() {
 
       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={handleSwap}
-        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading || toCoin?.symbol === 'ETH'}
+        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading || toCoin?.symbol === 'ETH' || needsEthGas}
         className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
         {loading ? (
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
