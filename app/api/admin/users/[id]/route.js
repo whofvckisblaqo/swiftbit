@@ -4,7 +4,7 @@ import User from '@/models/User';
 import Transaction from '@/models/Transaction';
 import { cryptoAssets } from '@/lib/data';
 import { requireAdmin } from '@/lib/adminAuth';
-import { sendDepositEmail } from '@/lib/mailer';
+import { sendDepositEmail, sendKycStatusEmail } from '@/lib/mailer';
 
 const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
 const COIN_NAMES  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.name]));
@@ -71,6 +71,11 @@ export async function PATCH(req, { params }) {
     await connectDB();
     const user = await User.findByIdAndUpdate(id, mongoOp, { new: true, strict: false });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    // Notify user of KYC decision
+    if (body.kycStatus === 'verified' || body.kycStatus === 'rejected') {
+      sendKycStatusEmail(user.email, user.name, body.kycStatus).catch(console.error);
+    }
 
     // Create a completed deposit transaction for each funded coin
     if (Object.keys(incUpdate).length) {
