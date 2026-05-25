@@ -7,8 +7,8 @@ import { useToast, useAuth } from '@/store/useAppStore';
 import { getStatusColor } from '@/lib/utils';
 import { cryptoAssets } from '@/lib/data';
 
-const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
-const COIN_ICONS  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, { icon: a.icon, color: a.color, name: a.name }]));
+const COIN_ICONS = Object.fromEntries(cryptoAssets.map(a => [a.symbol, { icon: a.icon, color: a.color, name: a.name }]));
+const STATIC_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
 
 const COINS = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'BNB', 'SOL', 'XRP', 'DOGE', 'ADA'];
 
@@ -285,6 +285,22 @@ export default function UsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [expandedUser, setExpandedUser] = useState(null);
   const [deductUser, setDeductUser] = useState(null);
+  const [coinPrices, setCoinPrices] = useState(STATIC_PRICES);
+
+  useEffect(() => {
+    fetch('/api/prices')
+      .then(r => r.json())
+      .then(data => {
+        if (data.prices) {
+          setCoinPrices(prev => {
+            const merged = { ...prev };
+            for (const [sym, p] of Object.entries(data.prices)) merged[sym] = p.price;
+            return merged;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -391,7 +407,7 @@ export default function UsersPage() {
                 <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-600 text-sm">No users found</td></tr>
               ) : displayed.map((u, i) => {
                 const balances = u.walletBalances || {};
-                const totalUsd = COINS.reduce((sum, sym) => sum + (parseFloat(balances[sym]) || 0) * (COIN_PRICES[sym] || 0), 0);
+                const totalUsd = COINS.reduce((sum, sym) => sum + (parseFloat(balances[sym]) || 0) * (coinPrices[sym] || 0), 0);
                 const isExpanded = expandedUser === u.id;
                 return (
                   <>
@@ -480,7 +496,7 @@ export default function UsersPage() {
                           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
                             {COINS.map(sym => {
                               const qty = parseFloat(balances[sym]) || 0;
-                              const usd = qty * (COIN_PRICES[sym] || 0);
+                              const usd = qty * (coinPrices[sym] || 0);
                               const meta = COIN_ICONS[sym] || {};
                               return (
                                 <div key={sym} className="glass rounded-xl p-3 border border-white/5">
