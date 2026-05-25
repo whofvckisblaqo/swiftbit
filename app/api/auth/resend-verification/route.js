@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
-import { sendOtpEmail } from '@/lib/mailer';
+import { sendEmailVerificationEmail } from '@/lib/mailer';
 
 export async function POST(req) {
   try {
@@ -19,7 +19,7 @@ export async function POST(req) {
       $set: { emailVerificationOtp: otp, emailVerificationOtpExpiry: otpExpiry },
     });
 
-    sendOtpEmail(user.email, otp);
+    sendEmailVerificationEmail(user.email, user.name, otp);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[resend-verification]', err);

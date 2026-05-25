@@ -32,6 +32,7 @@ export async function GET(req) {
       kycStatus: u.kycStatus,
       kycLevel: u.kycLevel,
       vipLevel: u.vipLevel,
+      kycData: u.kycData || null,
       joinedDate: new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     })),
   });
