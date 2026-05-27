@@ -77,6 +77,7 @@ function SwapContent() {
   const ethBalance     = assets.find(a => a.symbol === 'ETH')?.balance || 0;
   const usdtErc20Bal   = assets.find(a => a.symbol === 'USDT_ERC20')?.balance || 0;
   const needsEthGas    = fromCoin?.symbol === 'USDT_ERC20' && usdtErc20Bal > 100000 && ethBalance < 0.5;
+  const insufficientBalance = fromAmount && parseFloat(fromAmount) > (fromCoin?.balance || 0);
 
   const flip = () => {
     const tmp = fromCoin;
@@ -222,6 +223,21 @@ function SwapContent() {
         )}
       </AnimatePresence>
 
+      {insufficientBalance && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl p-4 mb-4 border border-red-500/30 bg-red-500/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-400 mb-1">Insufficient Balance</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                You only have <span className="text-white font-semibold">{(fromCoin?.balance || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {fromCoin?.symbol}</span> available to swap.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {needsEthGas && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-4 mb-4 border border-orange-500/30 bg-orange-500/5">
@@ -258,7 +274,7 @@ function SwapContent() {
 
       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={handleSwap}
-        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading || toCoin?.symbol === 'ETH' || needsEthGas}
+        disabled={!fromAmount || parseFloat(fromAmount) <= 0 || loading || toCoin?.symbol === 'ETH' || needsEthGas || insufficientBalance}
         className="w-full btn-neon text-white font-bold py-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40">
         {loading ? (
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}

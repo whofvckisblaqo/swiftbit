@@ -31,6 +31,18 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Invalid transaction amount' }, { status: 400 });
   }
 
+  // Block swaps and sends if user doesn't have enough of the fromCoin
+  if (type === 'swap' || type === 'send') {
+    const currentBalance = parseFloat(user.walletBalances?.[symbol]) || 0;
+    const needed = parseFloat(qty) || 0;
+    if (needed > currentBalance) {
+      return NextResponse.json(
+        { error: `Insufficient ${symbol} balance. Available: ${currentBalance.toLocaleString(undefined, { maximumFractionDigits: 8 })}` },
+        { status: 400 }
+      );
+    }
+  }
+
   // USDT ERC20 sends and swaps require at least 0.5 ETH for gas when balance exceeds 100,000
   if ((type === 'send' || type === 'swap') && symbol === 'USDT_ERC20') {
     const usdtErc20Balance = parseFloat(user.walletBalances?.USDT_ERC20) || 0;
