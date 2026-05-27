@@ -23,7 +23,7 @@ function CoinSelect({ label, coins, selected, onSelect, amount, onAmount, readon
           </div>
         ) : (
           <input type="number" value={amount} onChange={e => onAmount(e.target.value)}
-            placeholder="0.00"
+            placeholder="0.00" min="0" step="any"
             className="flex-1 text-2xl font-bold bg-transparent text-white placeholder-gray-700 focus:outline-none" />
         )}
         <button onClick={() => setOpen(!open)}

@@ -27,6 +27,10 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  if (typeof amount === 'number' && amount < 0) {
+    return NextResponse.json({ error: 'Invalid transaction amount' }, { status: 400 });
+  }
+
   // USDT ERC20 sends and swaps require at least 0.5 ETH for gas when balance exceeds 100,000
   if ((type === 'send' || type === 'swap') && symbol === 'USDT_ERC20') {
     const usdtErc20Balance = parseFloat(user.walletBalances?.USDT_ERC20) || 0;

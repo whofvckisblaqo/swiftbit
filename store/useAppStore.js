@@ -87,9 +87,11 @@ const walletSlice = (set, get) => ({
   },
 
   executeSwap: async ({ fromCoin, toCoin, fromAmount }) => {
+    const safeFromAmount = Math.abs(parseFloat(fromAmount) || 0);
     const rate = fromCoin.price / toCoin.price;
-    const toAmount = fromAmount * rate;
-    const usdValue = fromAmount * fromCoin.price;
+    const toAmount = safeFromAmount * rate;
+    const usdValue = safeFromAmount * fromCoin.price;
+    fromAmount = safeFromAmount;
     const tx = await postTx(get().token, {
       type: 'swap', amount: usdValue,
       coin: `${fromCoin.name} → ${toCoin.name}`,
