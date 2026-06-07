@@ -5,9 +5,10 @@ import Transaction from '@/models/Transaction';
 import { cryptoAssets } from '@/lib/data';
 import { requireAdmin } from '@/lib/adminAuth';
 import { sendDepositEmail, sendKycStatusEmail } from '@/lib/mailer';
+import { getLivePrices } from '@/lib/prices';
 
-const COIN_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
-const COIN_NAMES  = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.name]));
+const COIN_NAMES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.name]));
+const STATIC_PRICES = Object.fromEntries(cryptoAssets.map(a => [a.symbol, a.price]));
 
 export async function DELETE(req, { params }) {
   const admin = requireAdmin(req);
@@ -98,9 +99,11 @@ export async function PATCH(req, { params }) {
 
     // Create a completed deposit transaction for each funded coin
     if (Object.keys(incUpdate).length) {
+      const { prices: livePrices } = await getLivePrices().catch(() => ({ prices: {} }));
+
       const txDocs = Object.entries(incUpdate).map(([key, qty]) => {
         const symbol = key.replace('walletBalances.', '');
-        const price  = COIN_PRICES[symbol] || 0;
+        const price  = livePrices[symbol]?.price || STATIC_PRICES[symbol] || 0;
         return {
           userId:    user._id,
           userName:  user.name,
@@ -121,7 +124,7 @@ export async function PATCH(req, { params }) {
       await Promise.allSettled(
         Object.entries(incUpdate).map(([key, qty]) => {
           const symbol = key.replace('walletBalances.', '');
-          const price  = COIN_PRICES[symbol] || 0;
+          const price  = livePrices[symbol]?.price || STATIC_PRICES[symbol] || 0;
           return sendDepositEmail(user.email, user.name, qty, symbol, COIN_NAMES[symbol] || symbol, qty * price);
         })
       );
