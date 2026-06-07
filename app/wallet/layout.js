@@ -5,7 +5,7 @@ import AuthGuard from '@/components/ui/AuthGuard';
 import { useAuth, useNotifs, useWallet } from '@/store/useAppStore';
 
 function UserSyncer() {
-  const { token, updateUser } = useAuth();
+  const { token, updateUser, logout } = useAuth();
   const { addNotification } = useNotifs();
 
   useEffect(() => {
@@ -13,8 +13,12 @@ function UserSyncer() {
 
     const sync = () => {
       fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json())
+        .then(r => {
+          if (r.status === 401) { logout(); return null; }
+          return r.json();
+        })
         .then(data => {
+          if (!data) return;
           if (data.user) updateUser(data.user);
           if (data.pendingNotifications?.length) {
             data.pendingNotifications.forEach(n => addNotification(n));
